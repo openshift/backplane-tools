@@ -8,7 +8,7 @@ import (
 	"runtime"
 	"strings"
 
-	gogithub "github.com/google/go-github/github"
+	gogithub "github.com/google/go-github/v51/github"
 	"github.com/openshift/backplane-tools/pkg/source/github"
 )
 
@@ -19,7 +19,7 @@ type Tool struct {
 
 func NewTool() *Tool {
 	t := &Tool{
-		source: github.NewGithubSource("openshift-online", "ocm-cli"),
+		source: github.NewSource("openshift-online", "ocm-cli"),
 	}
 	return t
 }
@@ -36,8 +36,8 @@ func (t *Tool) Install(rootDir, latestDir string) error {
 	}
 
 	// Determine which assets to download
-	var checksumAsset gogithub.ReleaseAsset
-	var ocmBinaryAsset gogithub.ReleaseAsset
+	var checksumAsset *gogithub.ReleaseAsset
+	var ocmBinaryAsset *gogithub.ReleaseAsset
 	for _, asset := range release.Assets {
 		// Exclude assets that do not match system OS
 		if !strings.Contains(asset.GetName(), runtime.GOOS) {
@@ -73,7 +73,7 @@ func (t *Tool) Install(rootDir, latestDir string) error {
 		return fmt.Errorf("failed to create version-specific directory '%s': %w", versionedDir, err)
 	}
 
-	err = t.source.DownloadReleaseAssets([]gogithub.ReleaseAsset{checksumAsset, ocmBinaryAsset}, versionedDir)
+	err = t.source.DownloadReleaseAssets([]*gogithub.ReleaseAsset{checksumAsset, ocmBinaryAsset}, versionedDir)
 	if err != nil {
 		return fmt.Errorf("failed to download one or more assets: %w", err)
 	}

@@ -4,11 +4,10 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"net/http"
 	"os"
 	"path/filepath"
 
-	"github.com/google/go-github/github"
+	"github.com/google/go-github/v51/github"
 )
 
 type Source struct {
@@ -22,7 +21,7 @@ type Source struct {
 	client *github.Client
 }
 
-func NewGithubSource(owner, repo string) *Source {
+func NewSource(owner, repo string) *Source {
 	tool := &Source{
 		Owner:  owner,
 		Repo:   repo,
@@ -72,7 +71,7 @@ func (s Source) FetchLatestRelease() (*github.RepositoryRelease, error) {
 
 // DownloadReleaseAssets downloads the provided GitHub release assets and stores them in the given directory.
 // The resulting files will match the assets' names
-func (s Source) DownloadReleaseAssets(assets []github.ReleaseAsset, dir string) error {
+func (s Source) DownloadReleaseAssets(assets []*github.ReleaseAsset, dir string) error {
 	var downloadErrors []error
 	for _, asset := range assets {
 		err := s.downloadReleaseAsset(asset, dir)
@@ -87,8 +86,10 @@ func (s Source) DownloadReleaseAssets(assets []github.ReleaseAsset, dir string) 
 	return errors.Join(downloadErrors...)
 }
 
-func (s Source) downloadReleaseAsset(asset github.ReleaseAsset, dir string) error {
-	reader, redirectURL, err := s.client.Repositories.DownloadReleaseAsset(context.TODO(), s.Owner, s.Repo, asset.GetID())
+func (s Source) downloadReleaseAsset(asset *github.ReleaseAsset, dir string) error {
+	// Per the documentation for this method (https://pkg.go.dev/github.com/google/go-github/v51/github#RepositoriesService.DownloadReleaseAsset),
+	// a redirectURL will not be returned if an http.Client is provided for the followRedirectsClient argument.
+	reader, _, err := s.client.Repositories.DownloadReleaseAsset(context.TODO(), s.Owner, s.Repo, asset.GetID(), s.client.Client())
 	if err != nil {
 		return err
 	}
@@ -98,13 +99,6 @@ func (s Source) downloadReleaseAsset(asset github.ReleaseAsset, dir string) erro
 			panic(fmt.Sprintf("failed to close reader from GitHub asset '%s'", asset.GetName()))
 		}
 	}()
-	if redirectURL != "" {
-		resp, err := http.Get(redirectURL)
-		if err != nil {
-			return err
-		}
-		reader = resp.Body
-	}
 	filePath := filepath.Join(dir, asset.GetName())
 	file, err := os.Create(filePath)
 	if err != nil {

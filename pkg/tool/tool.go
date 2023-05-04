@@ -21,8 +21,8 @@ type Tool interface {
 
 type Map map[string]Tool
 
-func (m *Map) Names() []string {
-	return utils.Keys(*m)
+func (m Map) Names() []string {
+	return utils.Keys(m)
 }
 
 var toolMap Map
