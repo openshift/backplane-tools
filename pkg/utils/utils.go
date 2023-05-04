@@ -10,7 +10,7 @@ func Contains[T comparable](list []T, val T) bool {
 }
 
 func Keys[T, U comparable](myMap map[T]U) []T {
-	keys := make([]T, len(myMap))
+	keys := []T{}
 	for k := range myMap {
 		keys = append(keys, k)
 	}
