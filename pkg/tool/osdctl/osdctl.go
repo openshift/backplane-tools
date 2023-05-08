@@ -194,7 +194,7 @@ func unArchive(source string, destination string) error {
 	var f *tar.Header
 	for {
 		f, err = arc.Next()
-		if err != io.EOF {
+		if err == io.EOF {
 			break
 		}
 		if err != nil {
