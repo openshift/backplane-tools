@@ -2,11 +2,13 @@ package tool
 
 import (
 	"fmt"
-	"github.com/openshift/backplane-tools/pkg/tool/ocm"
-	"github.com/openshift/backplane-tools/pkg/utils"
 	"os"
 	"path/filepath"
 	"strings"
+
+	"github.com/openshift/backplane-tools/pkg/tool/ocm"
+	"github.com/openshift/backplane-tools/pkg/tool/osdctl"
+	"github.com/openshift/backplane-tools/pkg/utils"
 )
 
 type Tool interface {
@@ -32,7 +34,8 @@ func newMap() Map {
 
 	ocmTool := ocm.NewTool()
 	toolMap[ocmTool.Name()] = ocmTool
-
+	osdctlTool := osdctl.NewTool()
+	toolMap[osdctlTool.Name()] = osdctlTool
 	return toolMap
 }
 
