@@ -1,11 +1,14 @@
-BUILD_DIR:=./bin
+BIN_DIR:=./bin
 
+.PHONY: build
 build: clean
-	mkdir -p ${BUILD_DIR}
-	go build -o "${BUILD_DIR}/backplane-tools" main.go
+	mkdir -p ${BIN_DIR}
+	go build -mod=mod -o "${BIN_DIR}/backplane-tools" main.go
 
+.PHONY: clean
 clean:
-	rm -rf "${BUILD_DIR}"
+	rm -rf "${BIN_DIR}"
 
+.PHONY: test
 test:
-	echo "TODO"
+	go test ./pkg/... ./cmd/... -count=1 -mod=mod

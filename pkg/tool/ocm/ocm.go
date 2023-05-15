@@ -17,6 +17,7 @@ type Tool struct {
 	source *github.Source
 }
 
+// NewTool builds an OCM tool object
 func NewTool() *Tool {
 	t := &Tool{
 		source: github.NewSource("openshift-online", "ocm-cli"),
@@ -24,10 +25,13 @@ func NewTool() *Tool {
 	return t
 }
 
+// Name returns the name this tool should be referenced by
 func (t *Tool) Name() string {
 	return "ocm"
 }
 
+// Install downloads this tool, verifies it's integrity via checksum, and links the newly downloaded binary
+// to the "latest" directory
 func (t *Tool) Install(rootDir, latestDir string) error {
 	// Pull latest release from GH
 	release, err := t.source.FetchLatestRelease()
@@ -61,8 +65,11 @@ func (t *Tool) Install(rootDir, latestDir string) error {
 		ocmBinaryAsset = asset
 	}
 	// Ensure both checksum and binary were retrieved
-	if checksumAsset.GetName() == "" || ocmBinaryAsset.GetName() == "" {
-		return fmt.Errorf("failed to find ocm-cli or it's checksum")
+	if ocmBinaryAsset.GetName() == "" {
+		return fmt.Errorf("failed to find a valid ocm binary for %s/%s", runtime.GOOS, runtime.GOARCH)
+	}
+	if checksumAsset.GetName() == "" {
+		return fmt.Errorf("failed to find a valid checksum file for %s/%s", runtime.GOOS, runtime.GOARCH)
 	}
 
 	// Download the arch- & os-specific assets
@@ -93,11 +100,12 @@ func (t *Tool) Install(rootDir, latestDir string) error {
 	if err != nil {
 		return fmt.Errorf("failed to read ocm-cli checksum file '%s': %w", checksumFilePath, err)
 	}
-	checksum := strings.Split(string(checksumBytes), " ")[0]
-	if strings.TrimSpace(binarySum) != strings.TrimSpace(checksum) {
-		fmt.Printf("WARNING: Checksum for ocm-cli does not match the calculated value. Please retry installation. If issue persists, this tool can be downloaded manually at %s\n", ocmBinaryAsset.GetBrowserDownloadURL())
-		// We shouldn't link this binary to latest if the checksum isn't valid
-		return nil
+	tokens := strings.Fields(strings.TrimSpace(string(checksumBytes)))
+	if len(tokens) != 2 {
+		return fmt.Errorf("invalid checksum file: expected 2 tokens, got %d", len(tokens))
+	}
+	if strings.TrimSpace(binarySum) != strings.TrimSpace(tokens[0]) {
+		return fmt.Errorf("the provided checksum for ocm-cli does not match the calculated value. Please retry installation. If issues persists, this tool can be downloaded manually at %s\n", ocmBinaryAsset.GetBrowserDownloadURL())
 	}
 
 	// Link as latest
@@ -119,10 +127,13 @@ func (t *Tool) toolDir(rootDir string) string {
 	return filepath.Join(rootDir, "ocm")
 }
 
+// symlinkPath returns the path to the symlink which points to the application's latest version, given
+// the "latest" directory where this link should exist
 func (t *Tool) symlinkPath(latestDir string) string {
 	return filepath.Join(latestDir, "ocm")
 }
 
+// Remove cleans any tool files from the provided directories
 func (t *Tool) Remove(rootDir, latestDir string) error {
 	// Remove all binaries owned by this tool
 	toolDir := t.toolDir(rootDir)
@@ -133,13 +144,9 @@ func (t *Tool) Remove(rootDir, latestDir string) error {
 
 	// Remove all symlinks owned by this tool
 	latestFilePath := t.symlinkPath(latestDir)
-	err = os.Remove(latestFilePath)
+	err = os.RemoveAll(latestFilePath)
 	if err != nil {
 		return fmt.Errorf("failed to remove symlinked file %s: %w", latestFilePath, err)
 	}
-	return nil
-}
-
-func (t *Tool) Configure() error {
 	return nil
 }
