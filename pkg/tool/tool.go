@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	backplanecli "github.com/openshift/backplane-tools/pkg/tool/backplane-cli"
 	"github.com/openshift/backplane-tools/pkg/tool/ocm"
 	"github.com/openshift/backplane-tools/pkg/tool/osdctl"
 	"github.com/openshift/backplane-tools/pkg/utils"
@@ -34,8 +35,12 @@ func newMap() Map {
 
 	ocmTool := ocm.NewTool()
 	toolMap[ocmTool.Name()] = ocmTool
+
 	osdctlTool := osdctl.NewTool()
 	toolMap[osdctlTool.Name()] = osdctlTool
+
+	backplaneTool := backplanecli.NewTool()
+	toolMap[backplaneTool.Name()] = backplaneTool
 	return toolMap
 }
 
