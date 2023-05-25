@@ -37,7 +37,7 @@ func (t *Tool) Install(rootDir, latestDir string) error {
 
 	// Determine which assets to download
 	var checksumAsset *gogithub.ReleaseAsset
-	var backplaneBinaryAsset *gogithub.ReleaseAsset
+	var backplaneArchiveAsset *gogithub.ReleaseAsset
 	var arch = runtime.GOARCH
 	if arch == "amd64" {
 		arch = "x86_64"
@@ -59,13 +59,13 @@ func (t *Tool) Install(rootDir, latestDir string) error {
 			continue
 		}
 
-		if backplaneBinaryAsset.GetName() != "" {
+		if backplaneArchiveAsset.GetName() != "" {
 			return fmt.Errorf("detected duplicate backplane-cli binary assets")
 		}
-		backplaneBinaryAsset = asset
+		backplaneArchiveAsset = asset
 	}
 	// Ensure both checksum and binary were retrieved
-	if backplaneBinaryAsset.GetName() == "" {
+	if backplaneArchiveAsset.GetName() == "" {
 		return fmt.Errorf("failed to find valid backplane-cli binary asset")
 	}
 	if checksumAsset.GetName() == "" {
@@ -80,20 +80,20 @@ func (t *Tool) Install(rootDir, latestDir string) error {
 		return fmt.Errorf("failed to create version-specific directory '%s': %w", versionedDir, err)
 	}
 
-	err = t.source.DownloadReleaseAssets([]*gogithub.ReleaseAsset{checksumAsset, backplaneBinaryAsset}, versionedDir)
+	err = t.source.DownloadReleaseAssets([]*gogithub.ReleaseAsset{checksumAsset, backplaneArchiveAsset}, versionedDir)
 	if err != nil {
 		return fmt.Errorf("failed to download one or more assets: %w", err)
 	}
 
 	// Verify checksum of downloaded assets
-	backplaneBinaryFilepath := filepath.Join(versionedDir, backplaneBinaryAsset.GetName())
-	binarySum, err := utils.Sha256sum(backplaneBinaryFilepath)
+	backplaneArchiveFilepath := filepath.Join(versionedDir, backplaneArchiveAsset.GetName())
+	binarySum, err := utils.Sha256sum(backplaneArchiveFilepath)
 	if err != nil {
-		return fmt.Errorf("failed to calculate checksum for '%s': %w", backplaneBinaryFilepath, err)
+		return fmt.Errorf("failed to calculate checksum for '%s': %w", backplaneArchiveFilepath, err)
 	}
 
 	checksumFilePath := filepath.Join(versionedDir, checksumAsset.GetName())
-	checksumLine, err := utils.GetLineInFile(checksumFilePath, backplaneBinaryAsset.GetName())
+	checksumLine, err := utils.GetLineInFile(checksumFilePath, backplaneArchiveAsset.GetName())
 	if err != nil {
 		return fmt.Errorf("failed to retrieve checksum from file '%s': %w", checksumFilePath, err)
 	}
@@ -104,13 +104,13 @@ func (t *Tool) Install(rootDir, latestDir string) error {
 	actual := checksumTokens[0]
 
 	if strings.TrimSpace(binarySum) != strings.TrimSpace(actual) {
-		return fmt.Errorf("WARNING: Checksum for backplane-cli does not match the calculated value. Please retry installation. If issue persists, this tool can be downloaded manually at %s\n", backplaneBinaryAsset.GetBrowserDownloadURL())
+		return fmt.Errorf("WARNING: Checksum for backplane-cli does not match the calculated value. Please retry installation. If issue persists, this tool can be downloaded manually at %s\n", backplaneArchiveAsset.GetBrowserDownloadURL())
 	}
 
 	// Untar binary bundle
-	err = utils.Unarchive(backplaneBinaryFilepath, versionedDir)
+	err = utils.Unarchive(backplaneArchiveFilepath, versionedDir)
 	if err != nil {
-		return fmt.Errorf("failed to unarchive the osdctl asset file '%s': %w", backplaneBinaryFilepath, err)
+		return fmt.Errorf("failed to unarchive the osdctl asset file '%s': %w", backplaneArchiveFilepath, err)
 	}
 
 	// Link as latest
@@ -120,6 +120,7 @@ func (t *Tool) Install(rootDir, latestDir string) error {
 		return fmt.Errorf("failed to remove existing 'ocm-backplane' binary at '%s': %w", latestDir, err)
 	}
 
+	backplaneBinaryFilepath := filepath.Join(versionedDir, "ocm-backplane")
 	err = os.Symlink(backplaneBinaryFilepath, latestFilePath)
 	if err != nil {
 		return fmt.Errorf("failed to link new 'ocm-backplane' binary to '%s': %w", latestDir, err)
