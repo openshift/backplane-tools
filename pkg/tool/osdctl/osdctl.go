@@ -2,9 +2,7 @@ package osdctl
 
 import (
 	"archive/tar"
-	"bufio"
 	"compress/gzip"
-	"crypto/sha256"
 	"fmt"
 	"io"
 	"os"
@@ -15,6 +13,7 @@ import (
 	gogithub "github.com/google/go-github/v51/github"
 
 	"github.com/openshift/backplane-tools/pkg/source/github"
+	"github.com/openshift/backplane-tools/pkg/utils"
 )
 
 // Tool implements the interface to manage the 'osdctl' binary
@@ -87,47 +86,30 @@ func (t *Tool) Install(rootDir, latestDir string) error {
 
 	// Verify checksum of downloaded assets
 	osdctlBinaryFilepath := filepath.Join(versionedDir, osdctlBinaryAsset.GetName())
-	fileBytes, err := os.ReadFile(osdctlBinaryFilepath)
+	binarySum, err := utils.Sha256sum(osdctlBinaryFilepath)
 	if err != nil {
-		return fmt.Errorf("failed to read osdctl binary file '%s' while generating sha256sum: %w", osdctlBinaryFilepath, err)
+		return fmt.Errorf("failed to calculate checksum for '%s': %w", osdctlBinaryFilepath, err)
 	}
-	sumBytes := sha256.Sum256(fileBytes)
-	// TODO - there's probably a better way to do this
-	binarySum := fmt.Sprintf("%x", sumBytes[:])
 
 	checksumFilePath := filepath.Join(versionedDir, checksumAsset.GetName())
-	checksumFile, err := os.Open(checksumFilePath)
+	checksumLine, err := utils.GetLineInFile(checksumFilePath, osdctlBinaryAsset.GetName())
 	if err != nil {
-		return fmt.Errorf("failed to open osdctl checksum file '%s': %w", checksumFilePath, err)
+		return fmt.Errorf("failed to retrieve checksum from file '%s': %w", checksumFilePath, err)
 	}
-	var checksum string
-	scanner := bufio.NewScanner(checksumFile)
-	for scanner.Scan() {
-		line := scanner.Text()
-		tokens := strings.Fields(line)
-		if len(tokens) != 2 {
-			return fmt.Errorf("the checksum file '%s' is invalid", checksumFile.Name())
-		}
+	checksumTokens := strings.Fields(checksumLine)
+	if len(checksumTokens) != 2 {
+		return fmt.Errorf("the checksum file '%s' is invalid: expected 2 fields, got %d", checksumFilePath, len(checksumTokens))
+	}
+	actual := checksumTokens[0]
 
-		if osdctlBinaryAsset.GetName() != tokens[1] {
-			continue
-		}
-		checksum = tokens[0]
-	}
-	err = checksumFile.Close()
-	if err != nil {
-		return fmt.Errorf("failed to close checksumfile")
+	if strings.TrimSpace(binarySum) != strings.TrimSpace(actual) {
+		return fmt.Errorf("WARNING: Checksum for osdctl does not match the calculated value. Please retry installation. If issue persists, this tool can be downloaded manually at %s\n", osdctlBinaryAsset.GetBrowserDownloadURL())
 	}
 
-	if strings.TrimSpace(binarySum) != strings.TrimSpace(checksum) {
-		fmt.Printf("WARNING: Checksum for osdctl does not match the calculated value. Please retry installation. If issue persists, this tool can be downloaded manually at %s\n", osdctlBinaryAsset.GetBrowserDownloadURL())
-		// We shouldn't link this binary to latest if the checksum isn't valid
-		return nil
-	}
 	// Untar osdctl file
-	err = unArchive(osdctlBinaryFilepath, versionedDir)
+	err = utils.Unarchive(osdctlBinaryFilepath, versionedDir)
 	if err != nil {
-		return fmt.Errorf("failed to unarchive the osdctl asset file '%s': %w", filepath.Join(versionedDir, osdctlBinaryAsset.GetName()), err)
+		return fmt.Errorf("failed to unarchive the osdctl asset file '%s': %w", osdctlBinaryFilepath, err)
 	}
 
 	// Link as latest
