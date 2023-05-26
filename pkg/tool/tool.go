@@ -9,6 +9,7 @@ import (
 	backplanecli "github.com/openshift/backplane-tools/pkg/tool/backplane-cli"
 	"github.com/openshift/backplane-tools/pkg/tool/ocm"
 	"github.com/openshift/backplane-tools/pkg/tool/osdctl"
+	"github.com/openshift/backplane-tools/pkg/tool/rosa"
 	"github.com/openshift/backplane-tools/pkg/utils"
 )
 
@@ -39,8 +40,11 @@ func newMap() Map {
 	osdctlTool := osdctl.NewTool()
 	toolMap[osdctlTool.Name()] = osdctlTool
 
-	backplaneTool := backplanecli.NewTool()
-	toolMap[backplaneTool.Name()] = backplaneTool
+	backplaneCLITool := backplanecli.NewTool()
+	toolMap[backplaneCLITool.Name()] = backplaneCLITool
+
+	rosaTool := rosa.NewTool()
+	toolMap[rosaTool.Name()] = rosaTool
 	return toolMap
 }
 
