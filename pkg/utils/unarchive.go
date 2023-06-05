@@ -2,6 +2,7 @@ package utils
 
 import (
 	"archive/tar"
+	"archive/zip"
 	"compress/gzip"
 	"fmt"
 	"io"
@@ -10,7 +11,7 @@ import (
 )
 
 // Unarchive decompresses and extracts the contents of .tar.gz bundles to the specified destination
-func Unarchive (source string, destination string) error {
+func Unarchive(source string, destination string) error {
 	src, err := os.Open(source)
 	if err != nil {
 		return fmt.Errorf("failed to open tarball '%s': %v", source, err)
@@ -53,6 +54,63 @@ func Unarchive (source string, destination string) error {
 			}
 		}
 	}
+	return nil
+}
+
+// Unzip extracts files from a zip archive to the specified destination directory.
+func Unzip(source string, destination string) error {
+	// Open the zip archive for reading
+	reader, err := zip.OpenReader(source)
+	if err != nil {
+		return err
+	}
+	defer func(reader *zip.ReadCloser) {
+		err := reader.Close()
+		if err != nil {
+
+		}
+	}(reader)
+
+	// Create the destination directory if it doesn't exist
+	if err := os.MkdirAll(destination, os.ModePerm); err != nil {
+		return err
+	}
+
+	// Extract each file from the zip archive
+	for _, file := range reader.File {
+		filePath := filepath.Join(destination, file.Name)
+		if file.FileInfo().IsDir() {
+			// Create the directory if it doesn't exist
+			err := os.MkdirAll(filePath, os.ModePerm)
+			if err != nil {
+				return err
+			}
+			continue
+		}
+
+		// Create the parent directory of the file if it doesn't exist
+		if err := os.MkdirAll(filepath.Dir(filePath), os.ModePerm); err != nil {
+			return err
+		}
+
+		// Open the file inside the zip archive
+		inputFile, err := file.Open()
+		if err != nil {
+			return err
+		}
+
+		// Create the output file
+		outputFile, err := os.OpenFile(filePath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, file.Mode())
+		if err != nil {
+			return err
+		}
+
+		// Copy the contents from the input file to the output file
+		if _, err := io.Copy(outputFile, inputFile); err != nil {
+			return err
+		}
+	}
+
 	return nil
 }
 

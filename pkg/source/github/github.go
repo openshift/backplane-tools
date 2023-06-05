@@ -69,6 +69,19 @@ func (s Source) FetchLatestRelease() (*github.RepositoryRelease, error) {
 	return release, nil
 }
 
+// FetchTags returns the latest tag
+func (s Source) FetchTag() (string, error) {
+	ctx := context.Background()
+	tags, _, err := s.client.Repositories.ListTags(ctx, s.Owner, s.Repo, nil)
+	if err != nil {
+		return "", err
+	}
+	if len(tags) > 0 {
+		return *tags[0].Name, nil
+	}
+	return "", nil
+}
+
 // DownloadReleaseAssets downloads the provided GitHub release assets and stores them in the given directory.
 // The resulting files will match the assets' names
 func (s Source) DownloadReleaseAssets(assets []*github.ReleaseAsset, dir string) error {
