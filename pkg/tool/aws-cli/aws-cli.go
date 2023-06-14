@@ -6,7 +6,10 @@ import (
 	"github.com/openshift/backplane-tools/pkg/source/github"
 	"github.com/openshift/backplane-tools/pkg/utils"
 	"os"
+	"os/exec"
 	"path/filepath"
+	"runtime"
+	"strings"
 )
 
 // Tool implements the interface to manage the 'aws-cli' binary
@@ -32,42 +35,78 @@ func (t *Tool) Install(rootDir, latestDir string) error {
 		return err
 	}
 
-	awsExec := "dist/aws"
-	toolDir := t.toolDir(rootDir)
-	versionedDir := filepath.Join(toolDir, version)
-	awsCliPath := filepath.Join(versionedDir, "aws-cli/"+awsExec)
+	var (
+		awsExec           string
+		awsOldInstallDir  string
+		awsBinaryFilepath string
+		url               string
+		fileExtension     string
+		operatingSys      string
+	)
 
-	// Check if aws-cli is already installed
-	_, err = os.Stat(awsCliPath)
-	if err == nil {
-		fmt.Printf("'%s' is the most recent aws version.\n", awsCliPath)
-		return nil
+	toolDir := t.toolDir(rootDir)
+
+	if runtime.GOOS == "linux" {
+		// Assign variables for Linux
+		awsExec = "dist/aws"
+		operatingSys = "linux"
+		fileExtension = ".zip"
+		url = "https://awscli.amazonaws.com/awscli-exe-linux-x86_64-" + version + fileExtension
+
+	} else if runtime.GOOS == "darwin" {
+		// Assign variables for macOS
+		awsExec = "aws-cli.pkg/Payload/aws-cli/aws"
+		operatingSys = "darwin"
+		fileExtension = ".pkg"
+		url = "https://awscli.amazonaws.com/AWSCLIV2" + fileExtension
+
+	} else {
+		// Handle unsupported operating systems
+		return fmt.Errorf("Unsupported operating system:", runtime.GOOS)
+	}
+
+	err = os.RemoveAll(toolDir)
+	if err != nil && !os.IsNotExist(err) {
+		return err
 	}
 
 	//Download the latest awscli
-	err = os.MkdirAll(versionedDir, os.FileMode(0755))
+	err = os.MkdirAll(toolDir, os.FileMode(0755))
 	if err != nil {
-		return fmt.Errorf("failed to create version-specific directory '%s': %w", versionedDir, err)
+		return fmt.Errorf("failed to create version-specific directory '%s': %w", toolDir, err)
 	}
 
-	err = aws.DownloadAWSCLIRelease(version, versionedDir)
+	err = aws.DownloadAWSCLIRelease(url, fileExtension, toolDir)
 	if err != nil {
 		return fmt.Errorf("failed to download aws cli: %w", err)
 	}
 
 	//Unzip binary Bundle
-	bundle := "aws-cli.zip"
-	awsArchiveFilepath := filepath.Join(versionedDir, bundle)
-	err = utils.Unzip(awsArchiveFilepath, versionedDir)
-	if err != nil {
-		return fmt.Errorf("failed to unarchive the aws-cli zip file '%s': %w", awsArchiveFilepath, err)
-	}
+	bundle := "aws-cli" + fileExtension
+	awsArchiveFilepath := filepath.Join(toolDir, bundle)
+	awsNewInstallDir := filepath.Join(toolDir, "aws-cli")
 
-	awsOldInstallDir := filepath.Join(versionedDir, "aws")
-	awsNewInstallDir := filepath.Join(versionedDir, "aws-cli")
-	err = os.Rename(awsOldInstallDir, awsNewInstallDir)
-	if err != nil {
-		return fmt.Errorf("error renaming directory %w", err)
+	if fileExtension == ".zip" {
+		err = utils.Unzip(awsArchiveFilepath, toolDir)
+		if err != nil {
+			return fmt.Errorf("failed to unarchive the aws-cli file '%s': %w", awsArchiveFilepath, err)
+		}
+		awsOldInstallDir = filepath.Join(toolDir, "aws")
+		awsBinaryFilepath = filepath.Join(awsNewInstallDir, awsExec)
+		//Rename unzipped directory
+		err = os.Rename(awsOldInstallDir, awsNewInstallDir)
+		if err != nil {
+			return fmt.Errorf("error renaming directory %w", err)
+
+		}
+
+	} else {
+		cmd := exec.Command("pkgutil", "--expand-full", awsArchiveFilepath, awsNewInstallDir)
+		err = cmd.Run()
+		if err != nil {
+			return fmt.Errorf("failed to extract the aws-cli file '%s': %w", awsArchiveFilepath, err)
+		}
+		awsBinaryFilepath = filepath.Join(awsNewInstallDir, awsExec)
 	}
 
 	// Link as latest
@@ -77,11 +116,9 @@ func (t *Tool) Install(rootDir, latestDir string) error {
 		return fmt.Errorf("failed to remove existing 'aws' binary at '%s': %w", latestDir, err)
 	}
 
-	awsBinaryFilepath := filepath.Join(awsNewInstallDir, awsExec)
-
-	err = t.createWrapper(latestFilePath, awsBinaryFilepath)
+	err = t.createWrapper(latestFilePath, awsBinaryFilepath, toolDir, operatingSys)
 	if err != nil {
-		return fmt.Errorf("failed to create aws cli squid proxy wrapper: %w", latestDir, err)
+		return fmt.Errorf("failed to create aws cli squid proxy wrapper: %w", err)
 	}
 
 	return nil
@@ -113,17 +150,19 @@ func (t *Tool) Remove(rootDir, latestDir string) error {
 	return nil
 }
 
-func (t *Tool) createWrapper(latestDir, awsPath string) error {
-	input := fmt.Sprintf(`#!/usr/bin/env bash
+func (t *Tool) createWrapper(latestDir, awsPath, toolDir, operatingSys string) error {
+	var builder strings.Builder
+	builder.WriteString(`#!/usr/bin/env bash
 set \
   -o nounset \
   -o pipefail \
   -o errexit
-
 export HTTPS_PROXY=squid.corp.redhat.com:3128
 export HTTP_PROXY=squid.corp.redhat.com:3128
+`)
+	builder.WriteString(fmt.Sprintf("exec %s \"$@\"\n", awsPath))
 
-exec %s "$@"`, awsPath)
+	input := builder.String()
 
 	err := os.WriteFile(latestDir, []byte(input), 0755)
 	if err != nil {

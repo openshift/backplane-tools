@@ -7,11 +7,9 @@ import (
 	"path/filepath"
 )
 
-func DownloadAWSCLIRelease(version string, dir string) error {
-	url := "https://awscli.amazonaws.com/awscli-exe-linux-x86_64-" + version + ".zip"
-
+func DownloadAWSCLIRelease(url string, fileExtension string, dir string) error {
 	// Create the output file
-	filePath := filepath.Join(dir, "aws-cli.zip")
+	filePath := filepath.Join(dir, "aws-cli"+fileExtension)
 	file, err := os.Create(filePath)
 	if err != nil {
 		return err
