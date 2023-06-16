@@ -30,7 +30,7 @@ func (t *Tool) Name() string {
 
 func (t *Tool) Install(rootDir, latestDir string) error {
 	// Pull latest version from GH
-	version, err := t.source.FetchTag()
+	version, err := t.source.FetchLatestTag()
 	if err != nil {
 		return err
 	}
