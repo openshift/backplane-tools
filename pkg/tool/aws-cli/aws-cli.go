@@ -41,22 +41,20 @@ func (t *Tool) Install(rootDir, latestDir string) error {
 		awsBinaryFilepath string
 		url               string
 		fileExtension     string
-		operatingSys      string
 	)
 
 	toolDir := t.toolDir(rootDir)
+	versionedDir := filepath.Join(toolDir, version)
 
 	if runtime.GOOS == "linux" {
 		// Assign variables for Linux
 		awsExec = "dist/aws"
-		operatingSys = "linux"
 		fileExtension = ".zip"
 		url = "https://awscli.amazonaws.com/awscli-exe-linux-x86_64-" + version + fileExtension
 
 	} else if runtime.GOOS == "darwin" {
 		// Assign variables for macOS
 		awsExec = "aws-cli.pkg/Payload/aws-cli/aws"
-		operatingSys = "darwin"
 		fileExtension = ".pkg"
 		url = "https://awscli.amazonaws.com/AWSCLIV2" + fileExtension
 
@@ -65,33 +63,33 @@ func (t *Tool) Install(rootDir, latestDir string) error {
 		return fmt.Errorf("Unsupported operating system:", runtime.GOOS)
 	}
 
-	err = os.RemoveAll(toolDir)
+	err = os.RemoveAll(versionedDir)
 	if err != nil && !os.IsNotExist(err) {
 		return err
 	}
 
 	//Download the latest awscli
-	err = os.MkdirAll(toolDir, os.FileMode(0755))
+	err = os.MkdirAll(versionedDir, os.FileMode(0755))
 	if err != nil {
-		return fmt.Errorf("failed to create version-specific directory '%s': %w", toolDir, err)
+		return fmt.Errorf("failed to create version-specific directory '%s': %w", versionedDir, err)
 	}
 
-	err = aws.DownloadAWSCLIRelease(url, fileExtension, toolDir)
+	err = aws.DownloadAWSCLIRelease(url, fileExtension, versionedDir)
 	if err != nil {
 		return fmt.Errorf("failed to download aws cli: %w", err)
 	}
 
 	//Unzip binary Bundle
 	bundle := "aws-cli" + fileExtension
-	awsArchiveFilepath := filepath.Join(toolDir, bundle)
-	awsNewInstallDir := filepath.Join(toolDir, "aws-cli")
+	awsArchiveFilepath := filepath.Join(versionedDir, bundle)
+	awsNewInstallDir := filepath.Join(versionedDir, "aws-cli")
 
 	if fileExtension == ".zip" {
-		err = utils.Unzip(awsArchiveFilepath, toolDir)
+		err = utils.Unzip(awsArchiveFilepath, versionedDir)
 		if err != nil {
 			return fmt.Errorf("failed to unarchive the aws-cli file '%s': %w", awsArchiveFilepath, err)
 		}
-		awsOldInstallDir = filepath.Join(toolDir, "aws")
+		awsOldInstallDir = filepath.Join(versionedDir, "aws")
 		awsBinaryFilepath = filepath.Join(awsNewInstallDir, awsExec)
 		//Rename unzipped directory
 		err = os.Rename(awsOldInstallDir, awsNewInstallDir)
@@ -116,7 +114,7 @@ func (t *Tool) Install(rootDir, latestDir string) error {
 		return fmt.Errorf("failed to remove existing 'aws' binary at '%s': %w", latestDir, err)
 	}
 
-	err = t.createWrapper(latestFilePath, awsBinaryFilepath, toolDir, operatingSys)
+	err = t.createWrapper(latestFilePath, awsBinaryFilepath)
 	if err != nil {
 		return fmt.Errorf("failed to create aws cli squid proxy wrapper: %w", err)
 	}
@@ -150,7 +148,7 @@ func (t *Tool) Remove(rootDir, latestDir string) error {
 	return nil
 }
 
-func (t *Tool) createWrapper(latestDir, awsPath, toolDir, operatingSys string) error {
+func (t *Tool) createWrapper(latestDir, awsPath string) error {
 	var builder strings.Builder
 	builder.WriteString(`#!/usr/bin/env bash
 set \
