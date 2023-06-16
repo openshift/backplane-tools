@@ -70,7 +70,8 @@ func (s Source) FetchLatestRelease() (*github.RepositoryRelease, error) {
 }
 
 // FetchTags returns the latest tag
-func (s Source) FetchTag() (string, error) {
+// FetchLatestTag returns the latest tag
+func (s Source) FetchLatestTag() (string, error) {
 	ctx := context.Background()
 	tags, _, err := s.client.Repositories.ListTags(ctx, s.Owner, s.Repo, nil)
 	if err != nil {
