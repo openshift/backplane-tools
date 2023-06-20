@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 	"strings"
 
+	awscli "github.com/openshift/backplane-tools/pkg/tool/aws-cli"
 	backplanecli "github.com/openshift/backplane-tools/pkg/tool/backplane-cli"
 	"github.com/openshift/backplane-tools/pkg/tool/ocm"
 	"github.com/openshift/backplane-tools/pkg/tool/osdctl"
@@ -33,6 +34,9 @@ var toolMap Map
 
 func newMap() Map {
 	toolMap = Map{}
+
+	awsTool := awscli.NewTool()
+	toolMap[awsTool.Name()] = awsTool
 
 	ocmTool := ocm.NewTool()
 	toolMap[ocmTool.Name()] = ocmTool
