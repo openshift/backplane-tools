@@ -114,9 +114,14 @@ func (t *Tool) Install(rootDir, latestDir string) error {
 		return fmt.Errorf("failed to remove existing 'aws' binary at '%s': %w", latestDir, err)
 	}
 
-	err = t.createWrapper(latestFilePath, awsBinaryFilepath)
+	awsWrapperPath, err := t.createWrapper(versionedDir, awsBinaryFilepath)
 	if err != nil {
 		return fmt.Errorf("failed to create aws cli squid proxy wrapper: %w", err)
+	}
+
+	err = os.Symlink(awsWrapperPath, latestFilePath)
+	if err != nil {
+		return fmt.Errorf("failed to link new 'ocm' binary to '%s': %w", latestDir, err)
 	}
 
 	return nil
@@ -148,7 +153,8 @@ func (t *Tool) Remove(rootDir, latestDir string) error {
 	return nil
 }
 
-func (t *Tool) createWrapper(latestDir, awsPath string) error {
+// Creates script that routes all aws traffic through squid proxy
+func (t *Tool) createWrapper(versionedDir, awsPath string) (string, error) {
 	var builder strings.Builder
 	builder.WriteString(`#!/usr/bin/env bash
 set \
@@ -161,13 +167,14 @@ export HTTP_PROXY=squid.corp.redhat.com:3128
 	builder.WriteString(fmt.Sprintf("exec %s \"$@\"\n", awsPath))
 
 	input := builder.String()
+	awsWrapperPath := filepath.Join(versionedDir, "aws")
 
-	err := os.WriteFile(latestDir, []byte(input), 0755)
+	err := os.WriteFile(awsWrapperPath, []byte(input), 0755)
 	if err != nil {
-		return fmt.Errorf("failed to create exec file: %v", err)
+		return "", fmt.Errorf("failed to create exec file: %v", err)
 	}
 
-	return nil
+	return awsWrapperPath, nil
 }
 
 func (t *Tool) Configure() error {
