@@ -67,7 +67,7 @@ func Unzip(source string, destination string) error {
 	defer func(reader *zip.ReadCloser) {
 		err := reader.Close()
 		if err != nil {
-
+			fmt.Fprintf(os.Stderr, "possible memory leak: failed to close %s", source)
 		}
 	}(reader)
 

@@ -5,6 +5,7 @@
 *.so
 *.dylib
 bin/
+dist/
 backplane-tools
 # Test binary, built with `go test -c`
 *.test

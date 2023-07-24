@@ -60,7 +60,7 @@ func (t *Tool) Install(rootDir, latestDir string) error {
 
 	} else {
 		// Handle unsupported operating systems
-		return fmt.Errorf("Unsupported operating system:", runtime.GOOS)
+		return fmt.Errorf("Unsupported operating system: %s", runtime.GOOS)
 	}
 
 	err = os.RemoveAll(versionedDir)
