@@ -3,6 +3,7 @@ package utils
 import (
 	"bufio"
 	"fmt"
+	"io"
 	"os"
 	"strings"
 )
@@ -43,12 +44,23 @@ func GetLineInFile(filepath, match string) (res string, err error) {
 			err = closeErr
 		}
 	}()
-	scanner := bufio.NewScanner(file)
+	return GetLineInReader(file, match)
+}
+
+// GetLinInReader searches the provided reader for a line that contains the
+// provided string. If a match is found, the entire line is returned.
+// Only the first result is returned. If no lines match, an error is returned
+func GetLineInReader(reader io.Reader, match string) (res string, err error) {
+	scanner := bufio.NewScanner(reader)
 	for scanner.Scan() {
+		if scanner.Err() != nil {
+			return "", fmt.Errorf("failed to read line: %w", err)
+		}
 		line := scanner.Text()
+
 		if strings.Contains(line, match) {
 			return line, nil
 		}
 	}
-	return "", fmt.Errorf("failed to find line matching '%s' in '%s'", match, filepath)
+	return "", fmt.Errorf("failed to find matching line for search pattern: '%s'", match)
 }
