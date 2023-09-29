@@ -122,6 +122,11 @@ func (t *Tool) Install(rootDir, latestDir string) error {
 	return nil
 }
 
+func (t Tool) Installed(rootDir string) (bool, error) {
+	toolDir := t.toolDir(rootDir)
+	return utils.FileExists(toolDir)
+}
+
 // toolDir returns this tool's specific directory given the root directory all tools are installed in
 func (t *Tool) toolDir(rootDir string) string {
 	return filepath.Join(rootDir, "osdctl")

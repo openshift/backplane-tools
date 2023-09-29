@@ -7,6 +7,8 @@ backplane-tools offers an easy solution to install, remove, and upgrade a useful
 - [Tools](#tools)
 - [FAQ - How do I...](#faq-how-do-i)
   - [List available tools](#list-available-tools)
+  - [List installed tools](#list-installed-tools)
+  - [Add the tools I've installed to my $PATH](#add-the-tools-ive-installed-to-my-path)
   - [Install everything](#install-everything)
   - [Install a specific thing](#install-a-specific-thing)
   - [Upgrade everything](#upgrade-everything)
@@ -32,11 +34,15 @@ The tools currently managed by this application include:
 ## FAQ - How do I...
 Quick reference guide
 
-### List available tools for my version of backplane-tools
+### List available tools
 ```shell
-backplane-tools install --help
+backplane-tools list available
 ```
-Tools available for management by backplane-tools are listed under the `Usage` section of the help output within the square brackets (`[]`).
+
+### List installed tools
+```shell
+backplane-tools list installed
+```
 
 ### Add the tools I've installed to my $PATH
 Add the following line to your shell's .rc file:

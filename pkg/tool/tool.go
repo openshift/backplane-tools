@@ -16,13 +16,24 @@ import (
 )
 
 type Tool interface {
+	// Name returns the name of the tool
 	Name() string
 
+	// Install fetches the latest tool from it's respective source, installs
+	// it in a tool-unique directory under the provided rootDir, and symlinks
+	// it to provided the latestDir
 	Install(rootDir, latestDir string) error
 
+	// Confiure is currently unused
 	Configure() error
 
+	// Remove uninstalls the tool by deleting it's tool-unique directory under
+	// the provided rootDir and unlinking itself from the latestDir
 	Remove(rootDir, latestDir string) error
+
+	// Installed validates whether the tool has already been installed under the
+	// provided rootDir or not
+	Installed(rootDir string) (bool, error)
 }
 
 type Map map[string]Tool

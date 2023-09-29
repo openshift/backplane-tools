@@ -118,6 +118,11 @@ func (t *Tool) Install(rootDir, latestDir string) error {
 	return nil
 }
 
+func (t *Tool) Installed(rootDir string) (bool, error) {
+	toolDir := t.toolDir(rootDir)
+	return utils.FileExists(toolDir)
+}
+
 // getVersion retrieves the version info contained within the provided release.txt file
 func (t Tool) getVersion(releaseSlug string) (string, error) {
 	releaseData, err := t.source.GetFileContents(releaseSlug)
