@@ -8,6 +8,7 @@ import (
 
 	awscli "github.com/openshift/backplane-tools/pkg/tool/aws-cli"
 	backplanecli "github.com/openshift/backplane-tools/pkg/tool/backplane-cli"
+	"github.com/openshift/backplane-tools/pkg/tool/self"
 	"github.com/openshift/backplane-tools/pkg/tool/oc"
 	"github.com/openshift/backplane-tools/pkg/tool/ocm"
 	"github.com/openshift/backplane-tools/pkg/tool/osdctl"
@@ -48,6 +49,11 @@ var toolMap Map
 func newMap() Map {
 	toolMap = Map{}
 
+	// Self-management
+	self := self.NewTool()
+	toolMap[self.Name()] = self
+
+	// 3rd party tools
 	awsTool := awscli.NewTool()
 	toolMap[awsTool.Name()] = awsTool
 
