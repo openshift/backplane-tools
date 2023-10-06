@@ -10,6 +10,7 @@ import (
 
 	gogithub "github.com/google/go-github/v51/github"
 	"github.com/openshift/backplane-tools/pkg/source/github"
+	"github.com/openshift/backplane-tools/pkg/utils"
 )
 
 // Tool implements the interface to manage the 'ocm-cli' binary
@@ -112,6 +113,11 @@ func (t *Tool) Install(rootDir, latestDir string) error {
 		return fmt.Errorf("failed to link new 'ocm' binary to '%s': %w", latestDir, err)
 	}
 	return nil
+}
+
+func (t *Tool) Installed(rootDir string) (bool, error) {
+	toolDir := t.toolDir(rootDir)
+	return utils.FileExists(toolDir)
 }
 
 // toolDir returns this tool's specific directory given the root directory all tools are installed in

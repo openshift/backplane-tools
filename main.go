@@ -4,6 +4,7 @@ import (
 	"log"
 
 	"github.com/openshift/backplane-tools/cmd/install"
+	"github.com/openshift/backplane-tools/cmd/list"
 	"github.com/openshift/backplane-tools/cmd/remove"
 	"github.com/openshift/backplane-tools/cmd/upgrade"
 	"github.com/spf13/cobra"
@@ -23,8 +24,9 @@ func help(cmd *cobra.Command, _ []string) error {
 // Add subcommands
 func init() {
 	cmd.AddCommand(install.Cmd())
-	cmd.AddCommand(upgrade.Cmd())
+	cmd.AddCommand(list.Cmd())
 	cmd.AddCommand(remove.Cmd())
+	cmd.AddCommand(upgrade.Cmd())
 }
 
 func main() {

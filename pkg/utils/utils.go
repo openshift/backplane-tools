@@ -28,6 +28,18 @@ func Keys[T, U comparable](myMap map[T]U) []T {
 	return keys
 }
 
+// FileExists checks if a file *of any type* is present at the given path
+func FileExists(path string) (bool, error) {
+	_, err := os.Stat(path)
+	if os.IsNotExist(err) {
+		return false, nil
+	}
+	if err != nil {
+		return false, err
+	}
+	return true, nil
+}
+
 // GetLineInFile searches the provided file for a line that contains the
 // provided string. If a match is found, the entire line is returned.
 // Only the first result is returned. If no lines match, an error is returned
