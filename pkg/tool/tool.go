@@ -12,6 +12,7 @@ import (
 	"github.com/openshift/backplane-tools/pkg/tool/ocm"
 	"github.com/openshift/backplane-tools/pkg/tool/osdctl"
 	"github.com/openshift/backplane-tools/pkg/tool/rosa"
+	"github.com/openshift/backplane-tools/pkg/tool/yq"
 	"github.com/openshift/backplane-tools/pkg/utils"
 )
 
@@ -64,6 +65,10 @@ func newMap() Map {
 
 	rosaTool := rosa.NewTool()
 	toolMap[rosaTool.Name()] = rosaTool
+
+	yqTool := yq.NewTool()
+	toolMap[yqTool.Name()] = yqTool
+
 	return toolMap
 }
 
