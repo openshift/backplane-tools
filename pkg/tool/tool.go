@@ -9,6 +9,7 @@ import (
 	awscli "github.com/openshift/backplane-tools/pkg/tool/aws-cli"
 	backplanecli "github.com/openshift/backplane-tools/pkg/tool/backplane-cli"
 	"github.com/openshift/backplane-tools/pkg/tool/self"
+	golangcilint "github.com/openshift/backplane-tools/pkg/tool/golangci-lint"
 	"github.com/openshift/backplane-tools/pkg/tool/oc"
 	"github.com/openshift/backplane-tools/pkg/tool/ocm"
 	"github.com/openshift/backplane-tools/pkg/tool/osdctl"
@@ -74,6 +75,9 @@ func newMap() Map {
 
 	yqTool := yq.NewTool()
 	toolMap[yqTool.Name()] = yqTool
+
+	golangcilintTool := golangcilint.NewTool()
+	toolMap[golangcilintTool.Name()] = golangcilintTool
 
 	return toolMap
 }

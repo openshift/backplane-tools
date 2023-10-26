@@ -42,12 +42,31 @@ func Unarchive(source string, destination string) error {
 		if err != nil {
 			return fmt.Errorf("failed to read from archive '%s': %v", source, err)
 		}
+
+		fmt.Printf("f.Name: %v\n", f.Name)
+		fmt.Printf("f.FileInfo().IsDir(): %v\n", f.FileInfo().IsDir())
+
 		if f.FileInfo().IsDir() {
-			err = os.MkdirAll(filepath.Join(destination, f.Name), f.FileInfo().Mode())
+			dir := filepath.Join(destination, f.Name)
+			err = os.MkdirAll(dir, f.FileInfo().Mode())
+			fmt.Printf("err: %v\n", err)
 			if err != nil {
-				return fmt.Errorf("failed to create a directory : %v", err)
+				return fmt.Errorf("failed to create directory '%s': %v", dir, err)
 			}
 		} else {
+			// Edge-case: sometimes top-level files prepend their name with a directory that does not exist in the tarball's
+			// file structure. Blindly creating these files will cause the unarchive to fail with a permission denied, since we'd be trying to create
+			// a file with a path-divider character in it's name, so we need to catch those instances and create the directory
+			// manually
+			parentDir := filepath.Dir(f.Name)
+			fmt.Printf("parentDir: %v\n", parentDir)
+			if parentDir != "." {
+				err = os.MkdirAll(filepath.Join(destination, parentDir), os.FileMode(0755))
+				if err != nil {
+					return fmt.Errorf("failed to create directory '%s': %w", parentDir, err)
+				}
+			}
+
 			err = extractFile(destination, f, arc)
 			if err != nil {
 				return fmt.Errorf("failed to extract files: %v", err)
