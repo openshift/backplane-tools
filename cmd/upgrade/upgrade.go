@@ -19,24 +19,42 @@ func Cmd() *cobra.Command {
 		ValidArgs: append(toolMap.Names(), "all"),
 		Short:     "Upgrade an existing tool",
 		Long:      "Upgrades one or more tools from the provided list. It's valid to specify multiple tools: in this case, all tools provided will be upgraded. If no specific tools are provided, all are (installed and) upgraded by default.",
-		RunE: func(cmd *cobra.Command, args []string) error {
-			return run(cmd, args, toolMap)
+		RunE: func(_ *cobra.Command, args []string) error {
+			if len(args) == 0 || utils.Contains(args, "all") {
+				// If user explicitly passes 'all' or doesn't specify which tools to install,
+				// upgrade everything that's been installed locally
+				installedTools, err := tool.ListInstalled()
+				if err != nil {
+					return err
+				}
+				args = []string{}
+				for _, installedTool := range installedTools {
+					args = append(args, installedTool.Name())
+				}
+			}
+			return Upgrade(args)
 		},
 	}
 	return upgradeCmd
 }
 
-func run(cmd *cobra.Command, args []string, toolMap tool.Map) error {
-	if len(args) == 0 || utils.Contains(args, "all") {
-		// If user doesn't specify, or explicitly passes 'all', upgrade all the things
-		args = toolMap.Names()
+
+// Upgrade upgrades the provided tools to their latest versions
+func Upgrade(tools []string) error {
+	toolMap := tool.GetMap()
+
+	upgradeList := []tool.Tool{}
+	for _, toolName := range tools {
+		t, found := toolMap[toolName]
+		if !found {
+			return fmt.Errorf("failed to locate '%s' in list of supported tools", toolName)
+		}
+		upgradeList = append(upgradeList, t)
 	}
 
 	fmt.Println("Upgrading the following tools: ")
-	upgradeList := []tool.Tool{}
-	for _, toolName := range args {
-		fmt.Printf("- %s\n", toolName)
-		upgradeList = append(upgradeList, toolMap[toolName])
+	for _, t := range upgradeList {
+		fmt.Printf("- %s\n", t.Name())
 	}
 
 	err := tool.Install(upgradeList)
