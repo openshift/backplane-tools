@@ -193,3 +193,24 @@ func RemoveInstallDir() error {
 	}
 	return os.RemoveAll(installDir)
 }
+
+// ListInstalled returns a slice containing all tools the current machine has installed
+func ListInstalled() ([]Tool, error) {
+	tools := GetMap()
+	installedTools := []Tool{}
+	installDir, err := InstallDir()
+	if err != nil {
+		return installedTools, err
+	}
+
+	for _, tool := range tools {
+		installed, err := tool.Installed(installDir)
+		if err != nil {
+			return installedTools, err
+		}
+		if installed {
+			installedTools = append(installedTools, tool)
+		}
+	}
+	return installedTools, nil
+}
