@@ -73,7 +73,7 @@ export PATH=${PATH}:${HOME}/.local/bin/backplane/latest
 After updating your .rc file, restart your shell (ie - close + reopen the terminal window), then confirm installation succeeded by running:
 
 ```shell
-backplane-tools show installed
+backplane-tools list installed
 ```
 
 If the command was able to execute and lists `backplane-tools` as one of the installed applications, then you can safely cleanup the release file and its contents, if you so desire.
