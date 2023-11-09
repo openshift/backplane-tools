@@ -6,9 +6,13 @@ backplane-tools offers an easy solution to install, remove, and upgrade a useful
 <!-- toc -->
 - [Tools](#tools)
 - [FAQ - How do I...](#faq-how-do-i)
+  - [Install backplane-tools for the first time](#install-backplane-tools-for-the-first-time)
+    - [1. Get, verify, and extract the release](#1-get-verify-and-extract-the-release)
+    - [2. Bootstrap the application](#2-bootstrap-the-application)
+    - [3. (Recommended) Add the tools to my $PATH](#3-recommended-add-the-tools-to-my-path)
+    - [4. (Recommended) Cleanup](#4-recommended-cleanup)
   - [List available tools](#list-available-tools)
   - [List installed tools](#list-installed-tools)
-  - [Add the tools I've installed to my $PATH](#add-the-tools-ive-installed-to-my-path)
   - [Install everything](#install-everything)
   - [Install a specific thing](#install-a-specific-thing)
   - [Upgrade everything](#upgrade-everything)
@@ -34,6 +38,53 @@ The tools currently managed by this application include:
 ## FAQ - How do I...
 Quick reference guide
 
+### Install backplane-tools for the first time
+
+#### 1. Get, verify, and extract the release
+Download the [latest release](https://github.com/openshift/backplane-tools/releases/latest) for your architecture & operating system, as well as the release's checksum file. Verify the release integrity with:
+```shell
+sha256sum --check --ignore-missing backplane-tools_${RELEASE_TAG}_checksums.txt
+```
+where `RELEASE_TAG` is set to the latest release version (ie - `v0.1.0`). If the release file you've downloaded reports an `OK` status, then proceed with installation. Otherwise, retry the download.
+
+Extract the `backplane-tools` asset file into a dedicated directory for easy cleanup:
+```shell
+mkdir -p backplane-tools_${RELEASE_TAG}/
+tar -xzvf backplane-tools_${RELEASE_TAG}_${OS}_${ARCH}.tar.gz -C backplane-tools_${RELEASE_TAG}/
+```
+where `OS` is set to your local operating system (`linux`, `darwin`) and `ARCH` is set to your system architecture (`arm64`, `amd64`).
+
+#### 2. Bootstrap the application
+Run the following to bootstrap the application:
+```shell
+./backplane-tools install backplane-tools
+```
+If you've never installed `backplane-tools` before, you will likely see a warning recommending you add additional entries to your `$PATH`; see [the next section](#3-recommended-add-the-tools-to-my-path) for steps to address this warning.
+
+#### 3. (Recommended) Add the tools to my $PATH
+> [!NOTE]
+> By default, backplane-tools and the applications it manages are not added to your `$PATH`. This avoids making assumptions on how users prefer to set their `$PATH` (ie- some users may prefer to `source` a different configuration file in their shell's .rc file), and, consequently, avoid unintentional collisions between the tools backplane-tools manages and those the user self-manages. This way, if you one day wish to take over the management of a certain utility, you can easily choose to invoke that instead by placing its location earlier on your `$PATH` than backplane-tools' entry.
+
+Add the following line to your shell's .rc file (`.bashrc`, `.zshrc`, etc):
+```shell
+export PATH=${PATH}:${HOME}/.local/bin/backplane/latest
+```
+
+After updating your .rc file, restart your shell (ie - close + reopen the terminal window), then confirm installation succeeded by running:
+
+```shell
+backplane-tools show installed
+```
+
+If the command was able to execute and lists `backplane-tools` as one of the installed applications, then you can safely cleanup the release file and its contents, if you so desire.
+
+#### 4. (Recommended) Cleanup
+Once `backplane-tools` successfully installs itself, you can safely remove the release file, its checksum, and its contents:
+
+```shell
+rm -rf backplane-tools_${RELEASE_TAG}*
+```
+
 ### List available tools
 ```shell
 backplane-tools list available
@@ -43,15 +94,6 @@ backplane-tools list available
 ```shell
 backplane-tools list installed
 ```
-
-### Add the tools I've installed to my $PATH
-Add the following line to your shell's .rc file:
-```shell
-export PATH=${PATH}:${HOME}/.local/bin/backplane/latest
-```
-
-> [!IMPORTANT]
-> In order to minimize unexpected collisions and preemption, tools installed by backplane-tools are not added to your $PATH by default.
 
 ### Install everything
 ```shell
