@@ -36,11 +36,12 @@ func (t *Tool) Install(rootDir, latestDir string) error {
 	}
 
 	var (
-		awsExec           string
-		awsOldInstallDir  string
-		awsBinaryFilepath string
-		url               string
-		fileExtension     string
+		awsExecDir                 string
+		awsOldInstallDir           string
+		awsBinaryFilepath          string
+		awsCompleterBinaryFilepath string
+		url                        string
+		fileExtension              string
 	)
 
 	toolDir := t.toolDir(rootDir)
@@ -48,19 +49,19 @@ func (t *Tool) Install(rootDir, latestDir string) error {
 
 	if runtime.GOOS == "linux" {
 		// Assign variables for Linux
-		awsExec = "dist/aws"
+		awsExecDir = "dist"
 		fileExtension = ".zip"
 		url = "https://awscli.amazonaws.com/awscli-exe-linux-x86_64-" + version + fileExtension
 
 	} else if runtime.GOOS == "darwin" {
 		// Assign variables for macOS
-		awsExec = "aws-cli.pkg/Payload/aws-cli/aws"
+		awsExecDir = "aws-cli.pkg/Payload/aws-cli"
 		fileExtension = ".pkg"
 		url = "https://awscli.amazonaws.com/AWSCLIV2" + fileExtension
 
 	} else {
 		// Handle unsupported operating systems
-		return fmt.Errorf("Unsupported operating system: %s", runtime.GOOS)
+		return fmt.Errorf("unsupported operating system: %s", runtime.GOOS)
 	}
 
 	err = os.RemoveAll(versionedDir)
@@ -90,7 +91,6 @@ func (t *Tool) Install(rootDir, latestDir string) error {
 			return fmt.Errorf("failed to unarchive the aws-cli file '%s': %w", awsArchiveFilepath, err)
 		}
 		awsOldInstallDir = filepath.Join(versionedDir, "aws")
-		awsBinaryFilepath = filepath.Join(awsNewInstallDir, awsExec)
 		//Rename unzipped directory
 		err = os.Rename(awsOldInstallDir, awsNewInstallDir)
 		if err != nil {
@@ -104,8 +104,9 @@ func (t *Tool) Install(rootDir, latestDir string) error {
 		if err != nil {
 			return fmt.Errorf("failed to extract the aws-cli file '%s': %w", awsArchiveFilepath, err)
 		}
-		awsBinaryFilepath = filepath.Join(awsNewInstallDir, awsExec)
 	}
+	awsBinaryFilepath = filepath.Join(awsNewInstallDir, awsExecDir, "aws")
+	awsCompleterBinaryFilepath = filepath.Join(awsNewInstallDir, awsExecDir, "aws_completer")
 
 	// Link as latest
 	latestFilePath := t.symlinkPath(latestDir)
@@ -121,7 +122,19 @@ func (t *Tool) Install(rootDir, latestDir string) error {
 
 	err = os.Symlink(awsWrapperPath, latestFilePath)
 	if err != nil {
-		return fmt.Errorf("failed to link new 'ocm' binary to '%s': %w", latestDir, err)
+		return fmt.Errorf("failed to link new 'aws' binary to '%s': %w", latestDir, err)
+	}
+
+	// Link as latest also aws_completer
+	latestCompleterFilePath := t.symlinkCompleterPath(latestDir)
+	err = os.Remove(latestCompleterFilePath)
+	if err != nil && !os.IsNotExist(err) {
+		return fmt.Errorf("failed to remove existing 'aws_completer' binary at '%s': %w", latestDir, err)
+	}
+
+	err = os.Symlink(awsCompleterBinaryFilepath, latestCompleterFilePath)
+	if err != nil {
+		return fmt.Errorf("failed to link new 'aws' binary to '%s': %w", latestDir, err)
 	}
 
 	return nil
@@ -141,6 +154,10 @@ func (t *Tool) symlinkPath(latestDir string) string {
 	return filepath.Join(latestDir, "aws")
 }
 
+func (t *Tool) symlinkCompleterPath(latestDir string) string {
+	return filepath.Join(latestDir, "aws_completer")
+}
+
 func (t *Tool) Remove(rootDir, latestDir string) error {
 	// Remove all binaries owned by this tool
 	toolDir := t.toolDir(rootDir)
@@ -154,6 +171,11 @@ func (t *Tool) Remove(rootDir, latestDir string) error {
 	err = os.Remove(latestFilePath)
 	if err != nil {
 		return fmt.Errorf("failed to remove symlinked file %s: %w", latestFilePath, err)
+	}
+	latestCompleterFilePath := t.symlinkCompleterPath(latestDir)
+	err = os.Remove(latestCompleterFilePath)
+	if err != nil && !os.IsNotExist(err) {
+		return fmt.Errorf("failed to remove existing 'aws_completer' binary at '%s': %w", latestDir, err)
 	}
 	return nil
 }

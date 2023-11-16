@@ -99,7 +99,7 @@ func (t *Tool) Install(rootDir, latestDir string) error {
 	}
 	checksumTokens := strings.Fields(checksumLine)
 	if len(checksumTokens) != 2 {
-			return fmt.Errorf("the checksum file '%s' is invalid: expected 2 fields, got %d", checksumFilePath, len(checksumTokens))
+		return fmt.Errorf("the checksum file '%s' is invalid: expected 2 fields, got %d", checksumFilePath, len(checksumTokens))
 	}
 	actual := checksumTokens[0]
 
