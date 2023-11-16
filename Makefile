@@ -25,7 +25,7 @@ download-goreleaser:
 
 .PHONY: download-golangci-lint
 download-golangci-lint:
-	GOLANGCI_LINT_CACHE=$(shell mktemp -d) GOBIN=${BIN_DIR} go install github.com/golangci/golangci-lint/cmd/golangci-lint@${GOLANGCI_LINT_VERSION}
+	GOBIN=${BIN_DIR} go install github.com/golangci/golangci-lint/cmd/golangci-lint@${GOLANGCI_LINT_VERSION}
 
 SINGLE_TARGET ?= false
 
@@ -55,4 +55,4 @@ test:
 
 .PHONY: lint
 lint: download-golangci-lint
-	${BIN_DIR}/golangci-lint run
+	GOLANGCI_LINT_CACHE=$(shell mktemp -d) ${BIN_DIR}/golangci-lint run
