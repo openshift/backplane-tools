@@ -38,7 +38,6 @@ func Cmd() *cobra.Command {
 	return upgradeCmd
 }
 
-
 // Upgrade upgrades the provided tools to their latest versions
 func Upgrade(tools []string) error {
 	toolMap := tool.GetMap()

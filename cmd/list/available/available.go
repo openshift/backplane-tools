@@ -9,11 +9,11 @@ import (
 
 func Cmd() *cobra.Command {
 	availableCmd := &cobra.Command{
-		Use: "available",
-		Args: cobra.NoArgs,
+		Use:     "available",
+		Args:    cobra.NoArgs,
 		Aliases: []string{"installable", "possible"},
-		Short: "List available tools for install",
-		Long: "List tools that are available to install with backplane-tools",
+		Short:   "List available tools for install",
+		Long:    "List tools that are available to install with backplane-tools",
 		RunE: func(_ *cobra.Command, _ []string) error {
 			return List()
 		},

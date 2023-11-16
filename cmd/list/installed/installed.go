@@ -9,10 +9,10 @@ import (
 
 func Cmd() *cobra.Command {
 	installedCmd := &cobra.Command{
-		Use: "installed",
-		Args: cobra.NoArgs,
+		Use:   "installed",
+		Args:  cobra.NoArgs,
 		Short: "List installed tools",
-		Long: "List currently installed tools",
+		Long:  "List currently installed tools",
 		RunE: func(_ *cobra.Command, _ []string) error {
 			return List()
 		},

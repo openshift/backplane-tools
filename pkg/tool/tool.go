@@ -8,11 +8,11 @@ import (
 
 	awscli "github.com/openshift/backplane-tools/pkg/tool/aws-cli"
 	backplanecli "github.com/openshift/backplane-tools/pkg/tool/backplane-cli"
-	"github.com/openshift/backplane-tools/pkg/tool/self"
 	"github.com/openshift/backplane-tools/pkg/tool/oc"
 	"github.com/openshift/backplane-tools/pkg/tool/ocm"
 	"github.com/openshift/backplane-tools/pkg/tool/osdctl"
 	"github.com/openshift/backplane-tools/pkg/tool/rosa"
+	"github.com/openshift/backplane-tools/pkg/tool/self"
 	"github.com/openshift/backplane-tools/pkg/tool/yq"
 	"github.com/openshift/backplane-tools/pkg/utils"
 )

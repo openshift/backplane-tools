@@ -23,7 +23,7 @@ type Tool struct {
 func NewTool() *Tool {
 	t := &Tool{
 		source: github.NewSource("mikefarah", "yq"),
-		name: "yq",
+		name:   "yq",
 	}
 	return t
 }
@@ -87,7 +87,7 @@ func (t *Tool) Install(rootDir, latestDir string) error {
 	}
 
 	// Verify checksum of downloaded assets
-	binaryFilepath:= filepath.Join(versionedDir, binaryAsset.GetName())
+	binaryFilepath := filepath.Join(versionedDir, binaryAsset.GetName())
 	binarySum, err := utils.Sha256sum(binaryFilepath)
 	if err != nil {
 		return fmt.Errorf("failed to calculate checksum for '%s': %w", binaryFilepath, err)

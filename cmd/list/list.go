@@ -8,10 +8,10 @@ import (
 
 func Cmd() *cobra.Command {
 	listCmd := &cobra.Command{
-		Use: "list",
-		Args: cobra.NoArgs,
+		Use:   "list",
+		Args:  cobra.NoArgs,
 		Short: "List tools",
-		Long: "List installed & available tools",
+		Long:  "List installed & available tools",
 		RunE: func(cmd *cobra.Command, _ []string) error {
 			return cmd.Help()
 		},
