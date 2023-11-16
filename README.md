@@ -29,7 +29,7 @@ backplane-tools offers an easy solution to install, remove, and upgrade a useful
 ## Tools
 The tools currently managed by this application include:
 
-* aws
+* aws (including aws_completer)
 * backplane-cli
 * ocm
 * osdctl
