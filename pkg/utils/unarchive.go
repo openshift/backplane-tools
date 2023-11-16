@@ -4,6 +4,7 @@ import (
 	"archive/tar"
 	"archive/zip"
 	"compress/gzip"
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -14,7 +15,7 @@ import (
 func Unarchive(source string, destination string) error {
 	src, err := os.Open(source)
 	if err != nil {
-		return fmt.Errorf("failed to open tarball '%s': %v", source, err)
+		return fmt.Errorf("failed to open tarball '%s': %w", source, err)
 	}
 	defer func() {
 		err = src.Close()
@@ -24,33 +25,33 @@ func Unarchive(source string, destination string) error {
 	}()
 	uncompressed, err := gzip.NewReader(src)
 	if err != nil {
-		return fmt.Errorf("failed to read the gzip file '%s': %v", source, err)
+		return fmt.Errorf("failed to read the gzip file '%s': %w", source, err)
 	}
 	defer func() {
 		err = uncompressed.Close()
 		if err != nil {
-			fmt.Printf("WARNING: failed to close gzip file '%s': %v", source, err)
+			fmt.Printf("WARNING: failed to close gzip file '%s': %s", source, err.Error())
 		}
 	}()
 	arc := tar.NewReader(uncompressed)
 	var f *tar.Header
 	for {
 		f, err = arc.Next()
-		if err == io.EOF {
+		if errors.Is(err, io.EOF) {
 			break
 		}
 		if err != nil {
-			return fmt.Errorf("failed to read from archive '%s': %v", source, err)
+			return fmt.Errorf("failed to read from archive '%s': %w", source, err)
 		}
 		if f.FileInfo().IsDir() {
 			err = os.MkdirAll(filepath.Join(destination, f.Name), f.FileInfo().Mode())
 			if err != nil {
-				return fmt.Errorf("failed to create a directory : %v", err)
+				return fmt.Errorf("failed to create a directory : %w", err)
 			}
 		} else {
 			err = extractFile(destination, f, arc)
 			if err != nil {
-				return fmt.Errorf("failed to extract files: %v", err)
+				return fmt.Errorf("failed to extract files: %w", err)
 			}
 		}
 	}
@@ -117,22 +118,22 @@ func Unzip(source string, destination string) error {
 func extractFile(destination string, f *tar.Header, arc io.Reader) error {
 	dst, err := os.Create(filepath.Join(destination, f.Name))
 	if err != nil {
-		return fmt.Errorf("failed to create file: %v", err)
+		return fmt.Errorf("failed to create file: %w", err)
 	}
 	defer func() {
 		err = dst.Close()
 		if err != nil {
-			fmt.Printf("warning: failed to close '%s': %v\n", dst.Name(), err)
+			fmt.Printf("warning: failed to close '%s': %s\n", dst.Name(), err.Error())
 		}
 	}()
 
 	err = dst.Chmod(os.FileMode(f.Mode))
 	if err != nil {
-		return fmt.Errorf("failed to set permission on '%s': %v", dst.Name(), err)
+		return fmt.Errorf("failed to set permission on '%s': %w", dst.Name(), err)
 	}
 	_, err = dst.ReadFrom(arc)
 	if err != nil {
-		return fmt.Errorf("failed to read from archive  %v", err)
+		return fmt.Errorf("failed to read from archive  %w", err)
 	}
 	return nil
 }

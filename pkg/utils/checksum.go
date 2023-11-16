@@ -2,6 +2,7 @@ package utils
 
 import (
 	"crypto/sha256"
+	"encoding/hex"
 	"fmt"
 	"os"
 )
@@ -13,7 +14,5 @@ func Sha256sum(filepath string) (string, error) {
 		return "", fmt.Errorf("failed to read file '%s' while generating sha256sum: %w", filepath, err)
 	}
 	sumBytes := sha256.Sum256(fileBytes)
-	// TODO - there's probably a better way to do this
-	return fmt.Sprintf("%x", sumBytes[:]), nil
-
+	return hex.EncodeToString(sumBytes[:]), nil
 }

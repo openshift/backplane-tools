@@ -118,7 +118,7 @@ func (s Source) downloadReleaseAsset(asset *github.ReleaseAsset, dir string) err
 	if err != nil {
 		return err
 	}
-	err = os.Chmod(file.Name(), os.FileMode(0755))
+	err = os.Chmod(file.Name(), os.FileMode(0o755))
 	if err != nil {
 		return err
 	}

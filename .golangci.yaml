@@ -1,0 +1,118 @@
+linters:
+  disable-all: true
+  # One can't use disable and disable-all. disable-all is preferred to avoid lint failing when golangci gets updated and linters are added.
+  # at the same time but it is nice to explicitly state which linters we do not want.
+  #disable:
+  #- containedctx     # Context.Context within a struct a struct (as opposed to a func parameter) is nasty for many reasons, but actually sometimes useful.
+  #- contextcheck     # Not that useful/false positives.
+  #- cyclop           # Cyclo complexity already calculated by other linters.
+  #- depguard         # We do not restrict imports.
+  #- dogsled          # Could be nice in the future.
+  #- dupl             # Could be nice in the future.
+  #- exhaustive       # Not that useful/false positives.
+  #- exhaustruct      # Not that useful/false positives.
+  #- forcetypeassert  # We want a panic in situations when a type is asserted.
+  #- funlen           # We really like long functions.
+  #- gci              # Conflicts with other linters.
+  #- gochecknoglobals # We need globals.
+  #- gochecknoinits   # We have a lot of those.
+  #- gocognit         # Not that useful/false positives.
+  #- godox            # Not that useful/false positives.
+  #- gomnd            # The annoy is strong.
+  #- gomoddirectives  # Not that useful/false positives.
+  #- interfacebloat   # WE do bloaty interfaces.
+  #- inamedparam      # Not that useful.
+  #- ireturn          # Not that useful/false positives.
+  #- lll              # Could be nice in the future.
+  #- musttag          # Dislikes our deps.
+  #- nakedret         # Naked return good return.
+  # - noctx           # No library with a need to cancel http requests
+  #- nlreturn         # Could be nice in the future.
+  #- nonamedreturns   # Named return good return.
+  #- rowserrcheck     # No SQL here.
+  #- sqlclosecheck    # No SQL here.
+  #- tagliatelle      # Reports issues that are not right for us.
+  #- testpackage      # Could be nice in the future.
+  #- unparam          # Not that useful/false positives.
+  #- varnamelen       # Not that useful/false positives.
+  #- wrapcheck        # Not that useful/false positives.
+  #- wsl              # Not that useful/false positives.
+  #- zerologlint      # No zerolog here.
+  #- forbidigo        # Allow fmt.Println as we use no structured logging.
+  #- godot            # Allow comments not ending with dot.
+  #- goerr113         # We don't need stack traces in our errors.
+  enable:
+  - asasalint
+  - asciicheck
+  - bidichk
+  - bodyclose
+  - decorder
+  - dupword
+  - durationcheck
+  - errcheck
+  - errchkjson
+  - errname
+  - errorlint
+  - execinquery
+  - exportloopref
+  - ginkgolinter
+  - gocheckcompilerdirectives
+  - gochecksumtype
+  - goconst
+  - gocritic
+  - gocyclo
+  - gofmt
+  - gofumpt
+  - goheader
+  - goimports
+  - gosmopolitan
+  - govet
+  - grouper
+  - importas
+  - ineffassign
+  - loggercheck
+  - maintidx
+  - makezero
+  - mirror
+  - misspell
+  - musttag
+  - nestif
+  - nilerr
+  - nilnil
+  - nolintlint
+  - nosprintfhostport
+  - paralleltest
+  - perfsprint
+  - prealloc
+  - predeclared
+  - promlinter
+  - protogetter
+  - reassign
+  - revive
+  - rowserrcheck
+  - sloglint
+  - staticcheck
+  - stylecheck
+  - tagalign
+  - tenv
+  - testableexamples
+  - testifylint
+  - thelper
+  - tparallel
+  - typecheck
+  - unconvert
+  - unused
+  - usestdlibvars
+  - wastedassign
+  - whitespace
+issues:
+  max-same-issues: 0
+  max-issues-per-linter: 0
+linters-settings:
+  gosec:
+    excludes:
+    - G301 # Poor file permissions used when creating a directory.
+    - G302 # Poor file permissions used with chmod.
+    - G306 # Poor file permissions used when writing to a new file.
+    - G601 # Taking address of loop variable - not relevant anymore.
+    - G602 # Should reports out of bound access but is broken.

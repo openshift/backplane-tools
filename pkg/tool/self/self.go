@@ -71,7 +71,7 @@ func (t *Tool) Install(rootDir, latestDir string) error {
 	// Download the arch- & os-specific assets
 	toolDir := t.toolDir(rootDir)
 	versionedDir := filepath.Join(toolDir, release.GetTagName())
-	err = os.MkdirAll(versionedDir, os.FileMode(0755))
+	err = os.MkdirAll(versionedDir, os.FileMode(0o755))
 	if err != nil {
 		return fmt.Errorf("failed to create version-specific directory '%s': %w", versionedDir, err)
 	}
@@ -100,7 +100,7 @@ func (t *Tool) Install(rootDir, latestDir string) error {
 	actual := checksumTokens[0]
 
 	if strings.TrimSpace(binarySum) != strings.TrimSpace(actual) {
-		return fmt.Errorf("WARNING: Checksum for backplane-tools does not match the calculated value. Please retry installation. If issue persists, this tool can be downloaded manually at %s\n", backplaneArchiveAsset.GetBrowserDownloadURL())
+		return fmt.Errorf("warning: Checksum for backplane-tools does not match the calculated value. Please retry installation. If issue persists, this tool can be downloaded manually at %s", backplaneArchiveAsset.GetBrowserDownloadURL())
 	}
 
 	// Untar binary bundle

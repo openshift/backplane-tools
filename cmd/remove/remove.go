@@ -25,7 +25,7 @@ func Cmd() *cobra.Command {
 }
 
 // run removes the tool(s) specified by the provided positional args
-func run(cmd *cobra.Command, args []string, toolMap tool.Map) error {
+func run(_ *cobra.Command, args []string, toolMap tool.Map) error {
 	if len(args) == 0 {
 		fmt.Println("No tools specified to be removed. In order to remove all tools, explicitly specify 'all'")
 		return nil

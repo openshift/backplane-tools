@@ -20,6 +20,7 @@ func DownloadAWSCLIRelease(url string, fileExtension string, dir string) error {
 	if err != nil {
 		return err
 	}
+	defer response.Body.Close()
 
 	// Write the response body to the output file
 	_, err = io.Copy(file, response.Body)

@@ -2,6 +2,7 @@ package ocm
 
 import (
 	"crypto/sha256"
+	"encoding/hex"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -69,7 +70,7 @@ func (t *Tool) Install(rootDir, latestDir string) error {
 	// Download the arch- & os-specific assets
 	toolDir := t.toolDir(rootDir)
 	versionedDir := filepath.Join(toolDir, release.GetTagName())
-	err = os.MkdirAll(versionedDir, os.FileMode(0755))
+	err = os.MkdirAll(versionedDir, os.FileMode(0o755))
 	if err != nil {
 		return fmt.Errorf("failed to create version-specific directory '%s': %w", versionedDir, err)
 	}
@@ -86,8 +87,7 @@ func (t *Tool) Install(rootDir, latestDir string) error {
 		return fmt.Errorf("failed to read ocm-cli binary file '%s' while generating sha256sum: %w", ocmBinaryFilepath, err)
 	}
 	sumBytes := sha256.Sum256(fileBytes)
-	// TODO - there's probably a better way to do this
-	binarySum := fmt.Sprintf("%x", sumBytes[:])
+	binarySum := hex.EncodeToString(sumBytes[:])
 
 	checksumFilePath := filepath.Join(versionedDir, checksumAsset.GetName())
 	checksumBytes, err := os.ReadFile(checksumFilePath)

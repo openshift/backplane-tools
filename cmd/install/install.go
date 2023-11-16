@@ -26,7 +26,7 @@ func Cmd() *cobra.Command {
 }
 
 // run installs the tools specified by the provided positional args
-func run(cmd *cobra.Command, args []string, toolMap tool.Map) error {
+func run(_ *cobra.Command, args []string, toolMap tool.Map) error {
 	if len(args) == 0 || utils.Contains(args, "all") {
 		// If user doesn't specify, or explicitly passes 'all', give them all the things
 		args = toolMap.Names()

@@ -39,7 +39,7 @@ func (t *Tool) Install(rootDir, latestDir string) error {
 	}
 
 	versionedDir := filepath.Join(t.toolDir(rootDir), version)
-	err = os.MkdirAll(versionedDir, os.FileMode(0755))
+	err = os.MkdirAll(versionedDir, os.FileMode(0o755))
 	if err != nil {
 		return fmt.Errorf("failed to create version-specific directory '%s': %w", versionedDir, err)
 	}
@@ -58,7 +58,7 @@ func (t *Tool) Install(rootDir, latestDir string) error {
 	if err != nil {
 		return fmt.Errorf("failed to download client archive file %s: %w", clientArchiveSlug, err)
 	}
-	err = os.Chmod(clientArchiveFilePath, os.FileMode(0755))
+	err = os.Chmod(clientArchiveFilePath, os.FileMode(0o755))
 	if err != nil {
 		return fmt.Errorf("failed to update file mode for %s: %w", clientArchiveFilePath, err)
 	}
@@ -90,10 +90,8 @@ func (t *Tool) Install(rootDir, latestDir string) error {
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "failed to construct source URL for manual retrieval: %v\n", err)
 			return fmt.Errorf("checksum for %s does not match the calculated value: expected '%s', got '%s'. Please retry installation", clientArchiveFilePath, strings.TrimSpace(checksum), strings.TrimSpace(archiveSum))
-
-		} else {
-			return fmt.Errorf("checksum for %s does not match the calculated value: expected '%s', got '%s'. Please retry installation. If issue persists, this tool can be downloaded manually at %s\n", clientArchiveFilePath, strings.TrimSpace(checksum), strings.TrimSpace(archiveSum), sourceURL)
 		}
+		return fmt.Errorf("checksum for %s does not match the calculated value: expected '%s', got '%s'. Please retry installation. If issue persists, this tool can be downloaded manually at %s", clientArchiveFilePath, strings.TrimSpace(checksum), strings.TrimSpace(archiveSum), sourceURL)
 	}
 
 	// Unarchive client
@@ -149,7 +147,6 @@ func (t Tool) getVersion(releaseSlug string) (string, error) {
 		return "", fmt.Errorf("failed to parse version info from release: expected line to begin with 'Version:', got '%s'.\nVersion info retrieved:\n%s", tokens[0], line)
 	}
 	return tokens[1], nil
-
 }
 
 func (t Tool) extractChecksumFromFile(checksumFile, searchPattern string) (string, error) {
