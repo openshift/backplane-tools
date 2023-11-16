@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	awscli "github.com/openshift/backplane-tools/pkg/tool/aws-cli"
+	awscli "github.com/openshift/backplane-tools/pkg/tool/awscli"
 	backplanecli "github.com/openshift/backplane-tools/pkg/tool/backplane-cli"
 	"github.com/openshift/backplane-tools/pkg/tool/oc"
 	"github.com/openshift/backplane-tools/pkg/tool/ocm"
@@ -165,7 +165,7 @@ func createInstallDir() (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("could not determine install path: %w", err)
 	}
-	err = os.MkdirAll(installDir, os.FileMode(0755))
+	err = os.MkdirAll(installDir, os.FileMode(0o755))
 	return installDir, err
 }
 
@@ -182,7 +182,7 @@ func createLatestDir() (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("could not determine latest release path: %w", err)
 	}
-	err = os.MkdirAll(latestDir, os.FileMode(0755))
+	err = os.MkdirAll(latestDir, os.FileMode(0o755))
 	return latestDir, err
 }
 

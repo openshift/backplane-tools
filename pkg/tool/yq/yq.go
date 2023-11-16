@@ -1,6 +1,7 @@
 package yq
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -45,7 +46,7 @@ func (t *Tool) Install(rootDir, latestDir string) error {
 	for _, asset := range release.Assets {
 		if asset.GetName() == "checksums" {
 			if checksumAsset.GetName() != "" {
-				return fmt.Errorf("detected duplicate checksum assets")
+				return errors.New("detected duplicate checksum assets")
 			}
 			checksumAsset = asset
 			continue
@@ -76,7 +77,7 @@ func (t *Tool) Install(rootDir, latestDir string) error {
 	// Download the arch- & os-specific assets
 	toolDir := t.toolDir(rootDir)
 	versionedDir := filepath.Join(toolDir, release.GetTagName())
-	err = os.MkdirAll(versionedDir, os.FileMode(0755))
+	err = os.MkdirAll(versionedDir, os.FileMode(0o755))
 	if err != nil {
 		return fmt.Errorf("failed to create version-specific directory '%s': %w", versionedDir, err)
 	}
@@ -102,7 +103,7 @@ func (t *Tool) Install(rootDir, latestDir string) error {
 	// For some reason, yq ships several checksum formats for each asset in its 'checksums' file.
 	// Its honestly less fragile to check if _any_ of the columns contain our calculated checksum than try to decipher which column corresponds to which format
 	if !strings.Contains(checksumLine, strings.TrimSpace(binarySum)) {
-		return fmt.Errorf("WARNING: Checksum for yq does not match the calculated value. Please retry installation. If issue persists, this tool can be downloaded manually at %s\n", binaryAsset.GetBrowserDownloadURL())
+		return fmt.Errorf("warning: Checksum for yq does not match the calculated value. Please retry installation. If issue persists, this tool can be downloaded manually at %s", binaryAsset.GetBrowserDownloadURL())
 	}
 
 	// Link as latest

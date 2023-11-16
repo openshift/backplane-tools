@@ -17,7 +17,7 @@ OS := $(shell go env GOOS | sed 's/[a-z]/\U&/')
 ARCH := $(shell go env GOARCH)
 
 GORELEASER_VERSION="v1.15.0"
-GOLANGCI_LINT_VERSION="v1.53.3"
+GOLANGCI_LINT_VERSION="v1.55.0"
 
 .PHONY: download-goreleaser
 download-goreleaser:
@@ -25,7 +25,7 @@ download-goreleaser:
 
 .PHONY: download-golangci-lint
 download-golangci-lint:
-	GOBIN=${BIN_DIR} go install github.com/golangci/golangci-lint/cmd/golangci-lint@${GOLANGCI_LINT_VERSION}
+	GOLANGCI_LINT_CACHE=$(shell mktemp -d) GOBIN=${BIN_DIR} go install github.com/golangci/golangci-lint/cmd/golangci-lint@${GOLANGCI_LINT_VERSION}
 
 SINGLE_TARGET ?= false
 

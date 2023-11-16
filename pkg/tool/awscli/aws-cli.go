@@ -1,15 +1,16 @@
-package aws_cli
+package awscli
 
 import (
 	"fmt"
-	"github.com/openshift/backplane-tools/pkg/source/aws"
-	"github.com/openshift/backplane-tools/pkg/source/github"
-	"github.com/openshift/backplane-tools/pkg/utils"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"runtime"
 	"strings"
+
+	"github.com/openshift/backplane-tools/pkg/source/aws"
+	"github.com/openshift/backplane-tools/pkg/source/github"
+	"github.com/openshift/backplane-tools/pkg/utils"
 )
 
 // Tool implements the interface to manage the 'aws-cli' binary
@@ -47,19 +48,18 @@ func (t *Tool) Install(rootDir, latestDir string) error {
 	toolDir := t.toolDir(rootDir)
 	versionedDir := filepath.Join(toolDir, version)
 
-	if runtime.GOOS == "linux" {
+	switch runtime.GOOS {
+	case "linux":
 		// Assign variables for Linux
 		awsExecDir = "dist"
 		fileExtension = ".zip"
 		url = "https://awscli.amazonaws.com/awscli-exe-linux-x86_64-" + version + fileExtension
-
-	} else if runtime.GOOS == "darwin" {
+	case "darwin":
 		// Assign variables for macOS
 		awsExecDir = "aws-cli.pkg/Payload/aws-cli"
 		fileExtension = ".pkg"
 		url = "https://awscli.amazonaws.com/AWSCLIV2" + fileExtension
-
-	} else {
+	default:
 		// Handle unsupported operating systems
 		return fmt.Errorf("unsupported operating system: %s", runtime.GOOS)
 	}
@@ -69,8 +69,8 @@ func (t *Tool) Install(rootDir, latestDir string) error {
 		return err
 	}
 
-	//Download the latest awscli
-	err = os.MkdirAll(versionedDir, os.FileMode(0755))
+	// Download the latest awscli
+	err = os.MkdirAll(versionedDir, os.FileMode(0o755))
 	if err != nil {
 		return fmt.Errorf("failed to create version-specific directory '%s': %w", versionedDir, err)
 	}
@@ -80,7 +80,7 @@ func (t *Tool) Install(rootDir, latestDir string) error {
 		return fmt.Errorf("failed to download aws cli: %w", err)
 	}
 
-	//Unzip binary Bundle
+	// Unzip binary Bundle
 	bundle := "aws-cli" + fileExtension
 	awsArchiveFilepath := filepath.Join(versionedDir, bundle)
 	awsNewInstallDir := filepath.Join(versionedDir, "aws-cli")
@@ -91,13 +91,11 @@ func (t *Tool) Install(rootDir, latestDir string) error {
 			return fmt.Errorf("failed to unarchive the aws-cli file '%s': %w", awsArchiveFilepath, err)
 		}
 		awsOldInstallDir = filepath.Join(versionedDir, "aws")
-		//Rename unzipped directory
+		// Rename unzipped directory
 		err = os.Rename(awsOldInstallDir, awsNewInstallDir)
 		if err != nil {
 			return fmt.Errorf("error renaming directory %w", err)
-
 		}
-
 	} else {
 		cmd := exec.Command("pkgutil", "--expand-full", awsArchiveFilepath, awsNewInstallDir)
 		err = cmd.Run()
@@ -196,9 +194,9 @@ export HTTP_PROXY=squid.corp.redhat.com:3128
 	input := builder.String()
 	awsWrapperPath := filepath.Join(versionedDir, "aws")
 
-	err := os.WriteFile(awsWrapperPath, []byte(input), 0755)
+	err := os.WriteFile(awsWrapperPath, []byte(input), 0o755)
 	if err != nil {
-		return "", fmt.Errorf("failed to create exec file: %v", err)
+		return "", fmt.Errorf("failed to create exec file: %w", err)
 	}
 
 	return awsWrapperPath, nil
