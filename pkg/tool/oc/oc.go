@@ -150,7 +150,7 @@ func (t Tool) getVersion(releaseSlug string) (string, error) {
 }
 
 func (t Tool) extractChecksumFromFile(checksumFile, searchPattern string) (string, error) {
-	line, err := utils.GetLineInFile(checksumFile, searchPattern)
+	line, err := utils.GetLineInFileMatchingKey(checksumFile, searchPattern)
 	if err != nil {
 		return "", err
 	}
