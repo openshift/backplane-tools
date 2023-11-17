@@ -89,7 +89,7 @@ func (t *Tool) Install(rootDir, latestDir string) error {
 	}
 
 	checksumFilePath := filepath.Join(versionedDir, checksumAsset.GetName())
-	checksumLine, err := utils.GetLineInFile(checksumFilePath, rosaBinaryAsset.GetName())
+	checksumLine, err := utils.GetLineInFileMatchingKey(checksumFilePath, rosaBinaryAsset.GetName())
 	if err != nil {
 		return fmt.Errorf("failed to retrieve checksum from file '%s': %w", checksumFilePath, err)
 	}

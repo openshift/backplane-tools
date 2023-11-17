@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"regexp"
 	"strings"
 )
 
@@ -40,10 +41,12 @@ func FileExists(path string) (bool, error) {
 	return true, nil
 }
 
-// GetLineInFile searches the provided file for a line that contains the
-// provided string. If a match is found, the entire line is returned.
+// GetLineInFileMatchingKey searches the provided file for a line that contains the
+// provided key. A key is a pattern that will be either at the begin/end of line and
+// will have ::spaces:: characters around.
+// If a match is found, the entire line is returned.
 // Only the first result is returned. If no lines match, an error is returned
-func GetLineInFile(filepath, match string) (res string, err error) {
+func GetLineInFileMatchingKey(filepath string, key string) (res string, err error) {
 	file, err := os.Open(filepath)
 	if err != nil {
 		return "", err
@@ -56,7 +59,26 @@ func GetLineInFile(filepath, match string) (res string, err error) {
 			err = closeErr
 		}
 	}()
-	return GetLineInReader(file, match)
+
+	r, err := regexp.Compile("(^|\\s)" + key + "($|\\s)")
+	if err != nil {
+		return "", err
+	}
+
+	scanner := bufio.NewScanner(file)
+	for scanner.Scan() {
+		if scanner.Err() != nil {
+			return "", fmt.Errorf("failed to read line: %w", err)
+		}
+		line := scanner.Text()
+
+		match := r.FindStringSubmatch(line)
+		if len(match) > 0 {
+			return line, nil
+		}
+	}
+
+	return "", fmt.Errorf("no match found")
 }
 
 // GetLinInReader searches the provided reader for a line that contains the

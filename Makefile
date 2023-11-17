@@ -6,7 +6,7 @@ BIN_DIR=${BASE_DIR}/bin
 
 .DEFAULT_GOAL := all
 .PHONY: all
-all: vet fmt mod build test lint
+all: vet fmt mod lint test build
 
 .PHONY: fmt
 fmt:
