@@ -60,21 +60,22 @@ func GetLineInFileMatchingKey(filepath string, key string) (res string, err erro
 		}
 	}()
 
+	r, err := regexp.Compile("(^|\\s)" + key + "($|\\s)")
+	if err != nil {
+		return "", err
+	}
+
 	scanner := bufio.NewScanner(file)
 	for scanner.Scan() {
+		if scanner.Err() != nil {  
+            return "", fmt.Errorf("failed to read line: %w", err)  
+        }  
 		line := scanner.Text()
-		r, err := regexp.Compile("(^|\\s)" + key + "($|\\s)")
-		if err != nil {
-			return "", err
-		}
+
 		match := r.FindStringSubmatch(line)
 		if len(match) > 0 {
 			return line, nil
 		}
-	}
-
-	if err := scanner.Err(); err != nil {
-		return "", err
 	}
 
 	return "", fmt.Errorf("no match found")
