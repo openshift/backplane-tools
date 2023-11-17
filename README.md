@@ -65,13 +65,13 @@ If you've never installed `backplane-tools` before, you will likely see a warnin
 > [!NOTE]
 > By default, backplane-tools and the applications it manages are not added to your `$PATH`. This avoids making assumptions on how users prefer to set their `$PATH` (ie- some users may prefer to `source` a different configuration file in their shell's .rc file), and, consequently, avoid unintentional collisions between the tools backplane-tools manages and those the user self-manages. This way, if you one day wish to take over the management of a certain utility, you can easily choose to invoke that instead by placing its location earlier on your `$PATH` than backplane-tools' entry.
 
-Add the following line to your shell's .rc file (`.bashrc`, `.zshrc`, etc):
+To include `backplane-tools` in your $PATH, add the following line to the end of your shell's startup file (such as .bashrc or .zshrc):
 ```shell
-export PATH=${PATH}:${HOME}/.local/bin/backplane/latest
+export PATH=${HOME}/.local/bin/backplane/latest:${PATH}
 ```
+This line ensures that the directory containing the backplane-tools binary is placed at the beginning of your $PATH (assuming that `$PATH` is not overwritten somewhere else). If you ever want to manage a specific utility yourself, you can easily do so by placing its location earlier in your $PATH than the entry for backplane-tools.
 
-After updating your .rc file, restart your shell (ie - close + reopen the terminal window), then confirm installation succeeded by running:
-
+After making this change, restart your shell (close and reopen the terminal window). To confirm that the installation was successful, run the following command:
 ```shell
 backplane-tools list installed
 ```
