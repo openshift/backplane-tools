@@ -67,9 +67,9 @@ func GetLineInFileMatchingKey(filepath string, key string) (res string, err erro
 
 	scanner := bufio.NewScanner(file)
 	for scanner.Scan() {
-		if scanner.Err() != nil {  
-            return "", fmt.Errorf("failed to read line: %w", err)  
-        }  
+		if scanner.Err() != nil {
+			return "", fmt.Errorf("failed to read line: %w", err)
+		}
 		line := scanner.Text()
 
 		match := r.FindStringSubmatch(line)
