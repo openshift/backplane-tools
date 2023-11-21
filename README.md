@@ -85,6 +85,13 @@ Once `backplane-tools` successfully installs itself, you can safely remove the r
 rm -rf backplane-tools_${RELEASE_TAG}*
 ```
 
+#### 5. (Recommended) Auth
+
+Most of the tools are installed from Github.com, and anonymous access is heavily rate limited. To avoid this limitation, a Git Hub token will be used for authenticated access, if defined. You can create one using:
+```shell
+gh auth login --hostname  github.com
+```
+
 ### List available tools
 ```shell
 backplane-tools list available

@@ -4,10 +4,13 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"net/http"
 	"os"
 	"path/filepath"
 
+	"github.com/cli/go-gh/v2/pkg/auth"
 	"github.com/google/go-github/v51/github"
+	"golang.org/x/oauth2"
 )
 
 type Source struct {
@@ -22,10 +25,21 @@ type Source struct {
 }
 
 func NewSource(owner, repo string) *Source {
+	token, _ := auth.TokenForHost("")
+	var tc *http.Client
+	if token != "" {
+		ctx := context.Background()
+		ts := oauth2.StaticTokenSource(
+			&oauth2.Token{AccessToken: token},
+		)
+		tc = oauth2.NewClient(ctx, ts)
+	} else {
+		tc = nil
+	}
 	tool := &Source{
 		Owner:  owner,
 		Repo:   repo,
-		client: github.NewClient(nil),
+		client: github.NewClient(tc),
 	}
 	return tool
 }
