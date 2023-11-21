@@ -85,6 +85,13 @@ Once `backplane-tools` successfully installs itself, you can safely remove the r
 rm -rf backplane-tools_${RELEASE_TAG}*
 ```
 
+#### 5. (Recommended) Auth
+
+Most tools are defined on githib.com and if you access them without authentication you will have limitation in number of unautheticated access, in order to avoid issue, gh token will be used if defined, so you should create it using:
+```shell
+gh auth login --hostname  github.com
+```
+
 ### List available tools
 ```shell
 backplane-tools list available
