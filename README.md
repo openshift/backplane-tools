@@ -87,7 +87,7 @@ rm -rf backplane-tools_${RELEASE_TAG}*
 
 #### 5. (Recommended) Auth
 
-Most tools are defined on githib.com and if you access them without authentication you will have limitation in number of unautheticated access, in order to avoid issue, gh token will be used if defined, so you should create it using:
+Most of the tools are installed from Github.com, and anonymous access is heavily rate limited. To avoid this limitation, a Git Hub token will be used for authenticated access, if defined. You can create one using:
 ```shell
 gh auth login --hostname  github.com
 ```
