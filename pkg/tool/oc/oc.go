@@ -46,8 +46,9 @@ func (t *Tool) Install(rootDir, latestDir string) error {
 
 	// Download client archive
 	clientArchiveName := fmt.Sprintf("openshift-client-%s-%s.tar.gz", runtime.GOOS, version)
-	if runtime.GOARCH == "arm64" {
-		clientArchiveName = fmt.Sprintf("openshift-client-%s-%s-%s.tar.gz", runtime.GOOS, runtime.GOARCH, version)
+	if runtime.GOOS == "darwin" {
+		// 'darwin' OSes are referred to as 'mac' in mirror.openshift.com
+		clientArchiveName = fmt.Sprintf("openshift-client-mac-%s.tar.gz", version)
 	}
 
 	clientArchiveSlug, err := url.JoinPath(baseSlug, clientArchiveName)
