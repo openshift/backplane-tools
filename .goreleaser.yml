@@ -23,7 +23,7 @@ archives:
   - name_template: >-
       {{ .ProjectName }}_
       {{- .Version }}_
-      {{- title .Os }}_
+      {{- .Os }}_
       {{- if eq .Arch "amd64" }}x86_64
       {{- else }}{{ .Arch }}{{ end}}
 
