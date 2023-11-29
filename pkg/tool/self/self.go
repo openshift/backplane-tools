@@ -35,6 +35,11 @@ func (t *Tool) Install(rootDir, latestDir string) error {
 		return err
 	}
 
+	arch := runtime.GOARCH
+	if arch == "amd64" {
+		arch = "x86_64"
+	}
+
 	// Determine which assets to download
 	var checksumAsset *gogithub.ReleaseAsset
 	var backplaneArchiveAsset *gogithub.ReleaseAsset
@@ -47,7 +52,7 @@ func (t *Tool) Install(rootDir, latestDir string) error {
 			continue
 		}
 		// Exclude assets that do not match system architecture
-		if !strings.Contains(asset.GetName(), runtime.GOARCH) {
+		if !strings.Contains(asset.GetName(), arch) {
 			continue
 		}
 		// Exclude assets that do not match system OS
