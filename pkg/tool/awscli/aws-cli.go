@@ -188,6 +188,20 @@ set \
   -o errexit
 export HTTPS_PROXY=squid.corp.redhat.com:3128
 export HTTP_PROXY=squid.corp.redhat.com:3128
+
+if ! command -v curl &> /dev/null
+then
+  # if curl isn't installed, print a warning
+  echo "WARN: curl is not installed, cannot preflight VPN connection. If this command seems to hang you might need to connect to the VPN" 1>&2
+else
+  # Fail fast if not connected to the VPN instead of a very long timeout (exit code is curls proxy exit code)
+  # This connect-timeout may need to be tuned depending on SRE geolocation and latency to the proxy
+  if ! curl --connect-timeout 1 squid.corp.redhat.com > /dev/null 2>&1
+  then
+    echo "BPTools Error: Proxy Unavailable. Are you on the VPN?" 1>&2
+    exit 5
+  fi
+fi
 `)
 	builder.WriteString(fmt.Sprintf("exec %s \"$@\"\n", awsPath))
 
