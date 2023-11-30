@@ -14,12 +14,14 @@ func Cmd() *cobra.Command {
 		Aliases: []string{"installable", "possible"},
 		Short:   "List available tools for install",
 		Long:    "List tools that are available to install with backplane-tools",
-		RunE:    run,
+		RunE: func(_ *cobra.Command, _ []string) error {
+			return List()
+		},
 	}
 	return availableCmd
 }
 
-func run(_ *cobra.Command, _ []string) error {
+func List() error {
 	fmt.Println("The following tools are available for install:")
 
 	toolMap := tools.GetMap()

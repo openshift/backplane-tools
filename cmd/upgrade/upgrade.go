@@ -19,13 +19,15 @@ func Cmd() *cobra.Command {
 		ValidArgs: append(toolNames, "all"),
 		Short:     "Upgrade an existing tool",
 		Long:      "Upgrades one or more tools from the provided list. It's valid to specify multiple tools: in this case, all tools provided will be upgraded. If no specific tools are provided, all are (installed and) upgraded by default.",
-		RunE:      run,
+		RunE: func(_ *cobra.Command, args []string) error {
+			return Upgrade(args)
+		},
 	}
 	return upgradeCmd
 }
 
 // Upgrade upgrades the provided tools to their latest versions
-func run(_ *cobra.Command, args []string) error {
+func Upgrade(args []string) error {
 	var listTools []base.Tool
 	if len(args) == 0 || utils.Contains(args, "all") {
 		// If user explicitly passes 'all' or doesn't specify which tools to install,

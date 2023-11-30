@@ -19,13 +19,15 @@ func Cmd() *cobra.Command {
 		ValidArgs: append(toolNames, "all"),
 		Short:     "Install a new tool",
 		Long:      "Installs one or more tools from the given list. It's valid to specify multiple tools: in this case, all tools provided will be installed. If no specific tools are provided, all are installed by default.",
-		RunE:      run,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return Install(args)
+		},
 	}
 	return installCmd
 }
 
 // run installs the tools specified by the provided positional args
-func run(_ *cobra.Command, args []string) error {
+func Install(args []string) error {
 	fmt.Println("Installing the following tools:")
 	toolMap := tools.GetMap()
 	installList := []base.Tool{}

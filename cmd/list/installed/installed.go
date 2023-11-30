@@ -13,12 +13,14 @@ func Cmd() *cobra.Command {
 		Args:  cobra.NoArgs,
 		Short: "List installed tools",
 		Long:  "List currently installed tools",
-		RunE:  run,
+		RunE: func(_ *cobra.Command, _ []string) error {
+			return List()
+		},
 	}
 	return installedCmd
 }
 
-func run(_ *cobra.Command, _ []string) error {
+func List() error {
 	toolMap := tools.GetMap()
 
 	fmt.Println("Currently installed tools:")
