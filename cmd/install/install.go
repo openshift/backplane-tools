@@ -4,42 +4,52 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/openshift/backplane-tools/pkg/tool"
+	"github.com/openshift/backplane-tools/pkg/tools"
+	"github.com/openshift/backplane-tools/pkg/tools/base"
 	"github.com/openshift/backplane-tools/pkg/utils"
 	"github.com/spf13/cobra"
 )
 
 // Cmd returns the Command used to invoke the installation logic
 func Cmd() *cobra.Command {
-	toolMap := tool.GetMap()
+	toolNames := tools.Names()
 	installCmd := &cobra.Command{
-		Use:       fmt.Sprintf("install [all|%s]", strings.Join(toolMap.Names(), "|")),
+		Use:       fmt.Sprintf("install [all|%s]", strings.Join(toolNames, "|")),
 		Args:      cobra.OnlyValidArgs,
-		ValidArgs: append(toolMap.Names(), "all"),
+		ValidArgs: append(toolNames, "all"),
 		Short:     "Install a new tool",
 		Long:      "Installs one or more tools from the given list. It's valid to specify multiple tools: in this case, all tools provided will be installed. If no specific tools are provided, all are installed by default.",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return run(cmd, args, toolMap)
+			return Install(args)
 		},
 	}
 	return installCmd
 }
 
 // run installs the tools specified by the provided positional args
-func run(_ *cobra.Command, args []string, toolMap tool.Map) error {
+func Install(args []string) error {
+	fmt.Println("Installing the following tools:")
+	toolMap := tools.GetMap()
+	installList := []base.Tool{}
 	if len(args) == 0 || utils.Contains(args, "all") {
 		// If user doesn't specify, or explicitly passes 'all', give them all the things
-		args = toolMap.Names()
+		for _, tool := range toolMap {
+			installList = append(installList, tool)
+		}
+	} else {
+		for _, toolName := range args {
+			installList = append(installList, toolMap[toolName])
+		}
+	}
+	for _, tool := range installList {
+		latestversion, err := tool.LatestVersion()
+		if err != nil {
+			return err
+		}
+		fmt.Printf("- %s %s\n", tool.GetName(), latestversion)
 	}
 
-	fmt.Println("Installing the following tools:")
-	installList := []tool.Tool{}
-	for _, toolName := range args {
-		fmt.Printf("- %s\n", toolName)
-		installList = append(installList, toolMap[toolName])
-	}
-
-	err := tool.Install(installList)
+	err := tools.Install(installList)
 	if err != nil {
 		return fmt.Errorf("failed to install tools: %w", err)
 	}

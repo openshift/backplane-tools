@@ -8,30 +8,31 @@ import (
 	"runtime"
 	"strings"
 
-	"github.com/openshift/backplane-tools/pkg/source/aws"
-	"github.com/openshift/backplane-tools/pkg/source/github"
+	"github.com/openshift/backplane-tools/pkg/sources/aws"
+	"github.com/openshift/backplane-tools/pkg/sources/github"
+	"github.com/openshift/backplane-tools/pkg/tools/base"
 	"github.com/openshift/backplane-tools/pkg/utils"
 )
 
 // Tool implements the interface to manage the 'aws-cli' binary
 type Tool struct {
-	source *github.Source
+	base.Github
 }
 
-func NewTool() *Tool {
+func New() *Tool {
 	t := &Tool{
-		source: github.NewSource("aws", "aws-cli"),
+		Github: base.Github{
+			Default:            base.Default{Name: "aws"},
+			Source:             github.NewSource("aws", "aws-cli"),
+			VersionInLatestTag: true,
+		},
 	}
 	return t
 }
 
-func (t *Tool) Name() string {
-	return "aws"
-}
-
-func (t *Tool) Install(rootDir, latestDir string) error {
+func (t *Tool) Install() error {
 	// Pull latest version from GH
-	version, err := t.source.FetchLatestTag()
+	version, err := t.LatestVersion()
 	if err != nil {
 		return err
 	}
@@ -45,7 +46,7 @@ func (t *Tool) Install(rootDir, latestDir string) error {
 		fileExtension              string
 	)
 
-	toolDir := t.toolDir(rootDir)
+	toolDir := t.ToolDir()
 	versionedDir := filepath.Join(toolDir, version)
 
 	switch runtime.GOOS {
@@ -107,10 +108,10 @@ func (t *Tool) Install(rootDir, latestDir string) error {
 	awsCompleterBinaryFilepath = filepath.Join(awsNewInstallDir, awsExecDir, "aws_completer")
 
 	// Link as latest
-	latestFilePath := t.symlinkPath(latestDir)
+	latestFilePath := t.SymlinkPath()
 	err = os.Remove(latestFilePath)
 	if err != nil && !os.IsNotExist(err) {
-		return fmt.Errorf("failed to remove existing 'aws' binary at '%s': %w", latestDir, err)
+		return fmt.Errorf("failed to remove existing 'aws' binary at '%s': %w", base.LatestDir, err)
 	}
 
 	awsWrapperPath, err := t.createWrapper(versionedDir, awsBinaryFilepath)
@@ -120,62 +121,26 @@ func (t *Tool) Install(rootDir, latestDir string) error {
 
 	err = os.Symlink(awsWrapperPath, latestFilePath)
 	if err != nil {
-		return fmt.Errorf("failed to link new 'aws' binary to '%s': %w", latestDir, err)
+		return fmt.Errorf("failed to link new 'aws' binary to '%s': %w", base.LatestDir, err)
 	}
 
 	// Link as latest also aws_completer
-	latestCompleterFilePath := t.symlinkCompleterPath(latestDir)
+	latestCompleterFilePath := t.symlinkCompleterPath()
 	err = os.Remove(latestCompleterFilePath)
 	if err != nil && !os.IsNotExist(err) {
-		return fmt.Errorf("failed to remove existing 'aws_completer' binary at '%s': %w", latestDir, err)
+		return fmt.Errorf("failed to remove existing 'aws_completer' binary at '%s': %w", base.LatestDir, err)
 	}
 
 	err = os.Symlink(awsCompleterBinaryFilepath, latestCompleterFilePath)
 	if err != nil {
-		return fmt.Errorf("failed to link new 'aws' binary to '%s': %w", latestDir, err)
+		return fmt.Errorf("failed to link new 'aws' binary to '%s': %w", base.LatestDir, err)
 	}
 
 	return nil
 }
 
-func (t *Tool) Installed(rootDir string) (bool, error) {
-	toolDir := t.toolDir(rootDir)
-	return utils.FileExists(toolDir)
-}
-
-// toolDir returns this tool's specific directory given the root directory all tools are installed in
-func (t *Tool) toolDir(rootDir string) string {
-	return filepath.Join(rootDir, "aws")
-}
-
-func (t *Tool) symlinkPath(latestDir string) string {
-	return filepath.Join(latestDir, "aws")
-}
-
-func (t *Tool) symlinkCompleterPath(latestDir string) string {
-	return filepath.Join(latestDir, "aws_completer")
-}
-
-func (t *Tool) Remove(rootDir, latestDir string) error {
-	// Remove all binaries owned by this tool
-	toolDir := t.toolDir(rootDir)
-	err := os.RemoveAll(toolDir)
-	if err != nil {
-		return fmt.Errorf("failed to remove %s: %w", toolDir, err)
-	}
-
-	// Remove all symlinks owned by this tool
-	latestFilePath := t.symlinkPath(latestDir)
-	err = os.Remove(latestFilePath)
-	if err != nil {
-		return fmt.Errorf("failed to remove symlinked file %s: %w", latestFilePath, err)
-	}
-	latestCompleterFilePath := t.symlinkCompleterPath(latestDir)
-	err = os.Remove(latestCompleterFilePath)
-	if err != nil && !os.IsNotExist(err) {
-		return fmt.Errorf("failed to remove existing 'aws_completer' binary at '%s': %w", latestDir, err)
-	}
-	return nil
+func (t *Tool) symlinkCompleterPath() string {
+	return filepath.Join(base.LatestDir, "aws_completer")
 }
 
 // Creates script that routes all aws traffic through squid proxy
@@ -214,8 +179,4 @@ fi
 	}
 
 	return awsWrapperPath, nil
-}
-
-func (t *Tool) Configure() error {
-	return nil
 }

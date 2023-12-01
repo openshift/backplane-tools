@@ -10,29 +10,28 @@ import (
 	"strings"
 
 	gogithub "github.com/google/go-github/v51/github"
-	"github.com/openshift/backplane-tools/pkg/source/github"
-	"github.com/openshift/backplane-tools/pkg/utils"
+	"github.com/openshift/backplane-tools/pkg/sources/github"
+	"github.com/openshift/backplane-tools/pkg/tools/base"
 )
 
 // Tool implements the interface to manage the 'ocm-cli' binary
 type Tool struct {
-	source *github.Source
+	base.Github
 }
 
-func NewTool() *Tool {
+func New() *Tool {
 	t := &Tool{
-		source: github.NewSource("openshift-online", "ocm-cli"),
+		Github: base.Github{
+			Default: base.Default{Name: "ocm"},
+			Source:  github.NewSource("openshift-online", "ocm-cli"),
+		},
 	}
 	return t
 }
 
-func (t *Tool) Name() string {
-	return "ocm"
-}
-
-func (t *Tool) Install(rootDir, latestDir string) error {
+func (t *Tool) Install() error {
 	// Pull latest release from GH
-	release, err := t.source.FetchLatestRelease()
+	release, err := t.Source.FetchLatestRelease()
 	if err != nil {
 		return err
 	}
@@ -68,14 +67,14 @@ func (t *Tool) Install(rootDir, latestDir string) error {
 	}
 
 	// Download the arch- & os-specific assets
-	toolDir := t.toolDir(rootDir)
+	toolDir := t.ToolDir()
 	versionedDir := filepath.Join(toolDir, release.GetTagName())
 	err = os.MkdirAll(versionedDir, os.FileMode(0o755))
 	if err != nil {
 		return fmt.Errorf("failed to create version-specific directory '%s': %w", versionedDir, err)
 	}
 
-	err = t.source.DownloadReleaseAssets([]*gogithub.ReleaseAsset{checksumAsset, ocmBinaryAsset}, versionedDir)
+	err = t.Source.DownloadReleaseAssets([]*gogithub.ReleaseAsset{checksumAsset, ocmBinaryAsset}, versionedDir)
 	if err != nil {
 		return fmt.Errorf("failed to download one or more assets: %w", err)
 	}
@@ -102,50 +101,15 @@ func (t *Tool) Install(rootDir, latestDir string) error {
 	}
 
 	// Link as latest
-	latestFilePath := t.symlinkPath(latestDir)
+	latestFilePath := t.SymlinkPath()
 	err = os.Remove(latestFilePath)
 	if err != nil && !os.IsNotExist(err) {
-		return fmt.Errorf("failed to remove existing 'ocm' binary at '%s': %w", latestDir, err)
+		return fmt.Errorf("failed to remove existing 'ocm' binary at '%s': %w", base.LatestDir, err)
 	}
 
 	err = os.Symlink(ocmBinaryFilepath, latestFilePath)
 	if err != nil {
-		return fmt.Errorf("failed to link new 'ocm' binary to '%s': %w", latestDir, err)
+		return fmt.Errorf("failed to link new 'ocm' binary to '%s': %w", base.LatestDir, err)
 	}
-	return nil
-}
-
-func (t *Tool) Installed(rootDir string) (bool, error) {
-	toolDir := t.toolDir(rootDir)
-	return utils.FileExists(toolDir)
-}
-
-// toolDir returns this tool's specific directory given the root directory all tools are installed in
-func (t *Tool) toolDir(rootDir string) string {
-	return filepath.Join(rootDir, "ocm")
-}
-
-func (t *Tool) symlinkPath(latestDir string) string {
-	return filepath.Join(latestDir, "ocm")
-}
-
-func (t *Tool) Remove(rootDir, latestDir string) error {
-	// Remove all binaries owned by this tool
-	toolDir := t.toolDir(rootDir)
-	err := os.RemoveAll(toolDir)
-	if err != nil {
-		return fmt.Errorf("failed to remove %s: %w", toolDir, err)
-	}
-
-	// Remove all symlinks owned by this tool
-	latestFilePath := t.symlinkPath(latestDir)
-	err = os.Remove(latestFilePath)
-	if err != nil {
-		return fmt.Errorf("failed to remove symlinked file %s: %w", latestFilePath, err)
-	}
-	return nil
-}
-
-func (t *Tool) Configure() error {
 	return nil
 }

@@ -3,7 +3,7 @@ package available
 import (
 	"fmt"
 
-	"github.com/openshift/backplane-tools/pkg/tool"
+	"github.com/openshift/backplane-tools/pkg/tools"
 	"github.com/spf13/cobra"
 )
 
@@ -24,9 +24,13 @@ func Cmd() *cobra.Command {
 func List() error {
 	fmt.Println("The following tools are available for install:")
 
-	toolMap := tool.GetMap()
-	for toolName := range toolMap {
-		fmt.Printf("- %s\n", toolName)
+	toolMap := tools.GetMap()
+	for _, t := range toolMap {
+		version, err := t.LatestVersion()
+		if err != nil {
+			return fmt.Errorf("failed to determine version for '%s': %w", t.GetName(), err)
+		}
+		fmt.Printf("- %s %s\n", t.GetName(), version)
 	}
 	return nil
 }
