@@ -19,6 +19,26 @@ func Contains[T comparable](list []T, val T) bool {
 	return false
 }
 
+// ContainsAll returns true if all of the provided search terms are a substring of 'str'
+func ContainsAll(str string, terms []string) bool {
+	for _, term := range terms {
+		if !strings.Contains(str, term) {
+			return false
+		}
+	}
+	return true
+}
+
+// ContainsAny returns true if any of the provided search terms are a substring of 'str'
+func ContainsAny(str string, terms []string) bool {
+	for _, term := range terms {
+		if strings.Contains(str, term) {
+			return true
+		}
+	}
+	return false
+}
+
 // Keys returns a slice containing the keys of the provided map.
 // Order is preserved
 func Keys[T, U comparable](myMap map[T]U) []T {

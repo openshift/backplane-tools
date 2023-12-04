@@ -1,11 +1,9 @@
 package yq
 
 import (
-	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
-	"runtime"
 	"strings"
 
 	gogithub "github.com/google/go-github/v51/github"
@@ -37,39 +35,20 @@ func (t *Tool) Install() error {
 		return err
 	}
 
-	// Determine which assets to download
-	var checksumAsset *gogithub.ReleaseAsset
-	var binaryAsset *gogithub.ReleaseAsset
-	for _, asset := range release.Assets {
-		if asset.GetName() == "checksums" {
-			if checksumAsset.GetName() != "" {
-				return errors.New("detected duplicate checksum assets")
-			}
-			checksumAsset = asset
-			continue
-		}
-		if strings.Contains(asset.GetName(), ".tar.gz") {
-			continue
-		}
-		if !strings.Contains(asset.GetName(), runtime.GOARCH) {
-			continue
-		}
-		if !strings.Contains(strings.ToLower(asset.GetName()), strings.ToLower(runtime.GOOS)) {
-			continue
-		}
+	matches := github.FindAssetsExcluding([]string{".tar.gz"}, github.FindAssetsForArchAndOS(release.Assets))
+	if len(matches) != 1 {
+		return fmt.Errorf("unexpected number of assets found matching system spec: expected 1, got %d.\nMatching assets: %v", len(matches), matches)
+	}
+	binaryAsset := matches[0]
 
-		if binaryAsset.GetName() != "" {
-			return fmt.Errorf("detected duplicate binary asset")
-		}
-		binaryAsset = asset
+	matches, err = github.FindAssetsMatching("^checksums$", release.Assets)
+	if err != nil {
+		return fmt.Errorf("failed to find checksum asset: %w", err)
 	}
-	// Ensure both checksum and binary were retrieved
-	if checksumAsset.GetName() == "" {
-		return fmt.Errorf("failed to find checksum asset")
+	if len(matches) != 1 {
+		return fmt.Errorf("unexpected number of checksum assets found: expected 1, got %d.\nMatching assets: %v", len(matches), matches)
 	}
-	if binaryAsset.GetName() == "" {
-		return fmt.Errorf("failed to find the binary asset")
-	}
+	checksumAsset := matches[0]
 
 	// Download the arch- & os-specific assets
 	toolDir := t.ToolDir()
