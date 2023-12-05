@@ -51,10 +51,14 @@ func (t *Tool) Install() error {
 
 	switch runtime.GOOS {
 	case "linux":
+		arch := "x86_64"
+		if runtime.GOARCH == "arm64" {
+			arch = "aarch64"
+		}
 		// Assign variables for Linux
 		awsExecDir = "dist"
 		fileExtension = ".zip"
-		url = "https://awscli.amazonaws.com/awscli-exe-linux-x86_64-" + version + fileExtension
+		url = "https://awscli.amazonaws.com/awscli-exe-linux-" + arch + "-" + version + fileExtension
 	case "darwin":
 		// Assign variables for macOS
 		awsExecDir = "aws-cli.pkg/Payload/aws-cli"
