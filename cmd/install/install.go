@@ -5,7 +5,6 @@ import (
 	"strings"
 
 	"github.com/openshift/backplane-tools/pkg/tools"
-	"github.com/openshift/backplane-tools/pkg/tools/base"
 	"github.com/openshift/backplane-tools/pkg/utils"
 	"github.com/spf13/cobra"
 )
@@ -30,7 +29,7 @@ func Cmd() *cobra.Command {
 func Install(args []string) error {
 	fmt.Println("Installing the following tools:")
 	toolMap := tools.GetMap()
-	installList := []base.Tool{}
+	installList := []tools.Tool{}
 	if len(args) == 0 || utils.Contains(args, "all") {
 		// If user doesn't specify, or explicitly passes 'all', give them all the things
 		for _, tool := range toolMap {
@@ -46,7 +45,7 @@ func Install(args []string) error {
 		if err != nil {
 			return err
 		}
-		fmt.Printf("- %s %s\n", tool.GetName(), latestversion)
+		fmt.Printf("- %s %s\n", tool.Name(), latestversion)
 	}
 
 	err := tools.Install(installList)

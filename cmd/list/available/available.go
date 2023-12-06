@@ -28,9 +28,9 @@ func List() error {
 	for _, t := range toolMap {
 		version, err := t.LatestVersion()
 		if err != nil {
-			return fmt.Errorf("failed to determine version for '%s': %w", t.GetName(), err)
+			return fmt.Errorf("failed to determine version for '%s': %w", t.Name(), err)
 		}
-		fmt.Printf("- %s %s\n", t.GetName(), version)
+		fmt.Printf("- %s %s\n", t.Name(), version)
 	}
 	return nil
 }

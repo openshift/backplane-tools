@@ -5,7 +5,6 @@ import (
 	"strings"
 
 	"github.com/openshift/backplane-tools/pkg/tools"
-	"github.com/openshift/backplane-tools/pkg/tools/base"
 	"github.com/openshift/backplane-tools/pkg/utils"
 	"github.com/spf13/cobra"
 )
@@ -37,7 +36,7 @@ func Remove(args []string) error {
 
 	fmt.Println("Removing the following tools:")
 	toolMap := tools.GetMap()
-	removeList := []base.Tool{}
+	removeList := []tools.Tool{}
 	for _, toolName := range args {
 		fmt.Printf("- %s\n", toolName)
 		removeList = append(removeList, toolMap[toolName])

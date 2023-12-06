@@ -9,8 +9,11 @@ import (
 )
 
 type Mirror struct {
+	// Default defines the default Tool implementation
 	Default
-	Source   *mirror.Source
+	// Source defines the source of the tool in mirror.openshift.com
+	Source *mirror.Source
+	// BaseSlug refers to the base domain for the source
 	BaseSlug string
 }
 
