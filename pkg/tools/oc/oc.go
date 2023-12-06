@@ -22,7 +22,7 @@ type Tool struct {
 func New() *Tool {
 	t := &Tool{
 		Mirror: base.Mirror{
-			Default:  base.Default{Name: "oc"},
+			Default:  base.NewDefault("oc"),
 			Source:   mirror.NewSource(),
 			BaseSlug: fmt.Sprintf("/pub/openshift-v4/%s/clients/ocp/stable/", runtime.GOARCH),
 		},
@@ -106,7 +106,7 @@ func (t *Tool) Install() error {
 		return fmt.Errorf("failed to remove existing symlink at '%s': %w", latestFilePath, err)
 	}
 
-	clientBinaryFilepath := filepath.Join(versionedDir, t.Name)
+	clientBinaryFilepath := filepath.Join(versionedDir, t.Name())
 	err = os.Symlink(clientBinaryFilepath, latestFilePath)
 	if err != nil {
 		return fmt.Errorf("failed to link %s to %s: %w", clientBinaryFilepath, latestFilePath, err)

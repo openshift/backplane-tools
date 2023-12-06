@@ -9,40 +9,69 @@ import (
 	"github.com/openshift/backplane-tools/pkg/utils"
 )
 
+var InstallDir = func() string {
+	homeDir, err := os.UserHomeDir()
+	if err != nil {
+		panic(fmt.Errorf("failed to retrieve $HOME dir: %w", err))
+	}
+	return filepath.Join(homeDir, ".local", "bin", "backplane")
+}()
+
+var LatestDir = func() string {
+	return filepath.Join(InstallDir, "latest")
+}()
+
 type Default struct {
-	Tool
-	Name             string
-	executableName   string // if empty, name will be used
+	// Name defines the 'formal' name this tool is referred to within this program
+	name string
+
+	// executableName defines the invokable used to run the tool via CLI after it has
+	// been installed
+	executableName string
+
+	// installedVersion is the currently installed version of the tool
 	installedVersion string
-	latestVersion    string
+
+	// latestVersion is the latest version of the tool available for install
+	latestVersion string
+}
+
+// NewDefault creates a Default tool with the provided name
+func NewDefault(name string) Default {
+	d := Default{
+		name:           name,
+		executableName: name,
+	}
+	return d
+}
+
+// NewDefaultWithExecutable creates a Default tool with the provided name and executableName
+func NewDefaultWithExecutable(name, executable string) Default {
+	d := Default{
+		name:           name,
+		executableName: executable,
+	}
+	return d
 }
 
 // toolDir returns this tool's specific directory given the root directory all tools are installed in
 func (t *Default) ToolDir() string {
-	return filepath.Join(InstallDir, t.Name)
+	return filepath.Join(InstallDir, t.name)
 }
 
 // symlinkPath returns the path to the symlink created by this tool, given the latest directory
 func (t *Default) SymlinkPath() string {
-	return filepath.Join(LatestDir, t.GetExecutableName())
+	return filepath.Join(LatestDir, t.executableName)
 }
 
 // Name returns the name of the tool
-func (t *Default) GetName() string {
-	return t.Name
-}
-
-// SetExecutableName to initialize private field executableName and not use Name
-func (t *Default) SetExecutableName(executableName string) {
-	t.executableName = executableName
+func (t *Default) Name() string {
+	return t.name
 }
 
 // ExecutableName returns the main executable name of the tool that will be installed in latest
 // if not defined it will be the name
-func (t *Default) GetExecutableName() string {
-	if t.executableName == "" {
-		return t.Name
-	}
+func (t *Default) ExecutableName() string {
 	return t.executableName
 }
 
@@ -77,6 +106,7 @@ func (t *Default) Installed() (bool, error) {
 	return utils.FileExists(toolDir)
 }
 
+// InstalledVersion returns the currently installed version of the tool
 func (t *Default) InstalledVersion() (string, error) {
 	if t.installedVersion == "" {
 		latestFilePath := t.SymlinkPath()

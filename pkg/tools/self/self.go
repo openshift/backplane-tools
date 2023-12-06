@@ -21,7 +21,7 @@ type Tool struct {
 func New() *Tool {
 	t := &Tool{
 		Github: base.Github{
-			Default: base.Default{Name: "backplane-tools"},
+			Default: base.NewDefault("backplane-tools"),
 			Source:  github.NewSource("openshift", "backplane-tools"),
 		},
 	}

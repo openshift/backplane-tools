@@ -5,7 +5,6 @@ import (
 	"strings"
 
 	"github.com/openshift/backplane-tools/pkg/tools"
-	"github.com/openshift/backplane-tools/pkg/tools/base"
 	"github.com/openshift/backplane-tools/pkg/utils"
 	"github.com/spf13/cobra"
 )
@@ -28,7 +27,7 @@ func Cmd() *cobra.Command {
 
 // Upgrade upgrades the provided tools to their latest versions
 func Upgrade(args []string) error {
-	var listTools []base.Tool
+	var listTools []tools.Tool
 	if len(args) == 0 || utils.Contains(args, "all") {
 		// If user explicitly passes 'all' or doesn't specify which tools to install,
 		// upgrade everything that's been installed locally
@@ -41,7 +40,7 @@ func Upgrade(args []string) error {
 		// otherwise build the list verifying tool exist
 		toolMap := tools.GetMap()
 
-		listTools = []base.Tool{}
+		listTools = []tools.Tool{}
 		for _, toolName := range args {
 			t, found := toolMap[toolName]
 			if !found {
@@ -52,21 +51,21 @@ func Upgrade(args []string) error {
 	}
 
 	fmt.Println("Upgrading the following tools: ")
-	upgradeList := []base.Tool{}
+	upgradeList := []tools.Tool{}
 	for _, t := range listTools {
 		latestVersion, err := t.LatestVersion()
 		if err != nil {
-			return fmt.Errorf("failed to determine version for '%s': %w", t.GetName(), err)
+			return fmt.Errorf("failed to determine version for '%s': %w", t.Name(), err)
 		}
 		installedVersion, err := t.InstalledVersion()
 		if err != nil {
-			return fmt.Errorf("failed to determine version for '%s': %w", t.GetName(), err)
+			return fmt.Errorf("failed to determine version for '%s': %w", t.Name(), err)
 		}
 		if installedVersion == latestVersion {
-			fmt.Printf("- %s is already installed with latest version %s and will not be upgraded\n", t.GetName(), latestVersion)
+			fmt.Printf("- %s is already installed with latest version %s and will not be upgraded\n", t.Name(), latestVersion)
 		} else {
 			upgradeList = append(upgradeList, t)
-			fmt.Printf("- %s %s -> %s\n", t.GetName(), installedVersion, latestVersion)
+			fmt.Printf("- %s %s -> %s\n", t.Name(), installedVersion, latestVersion)
 		}
 	}
 

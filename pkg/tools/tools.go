@@ -17,39 +17,69 @@ import (
 	"github.com/openshift/backplane-tools/pkg/utils"
 )
 
-var toolMap map[string]base.Tool
+type Tool interface {
+	// Name returns the name of the tool
+	Name() string
+
+	// ExecutableName returns the main binary name of the tool that will be installed in latest
+	ExecutableName() string
+
+	// Install fetches the latest tool from it's respective source, installs
+	// it in a tool-unique directory under the provided rootDir, and symlinks
+	// it to provided the latestDir
+	Install() error
+
+	// Confiure is currently unused
+	Configure() error
+
+	// Remove uninstalls the tool by deleting it's tool-unique directory under
+	// the provided rootDir and unlinking itself from the latestDir
+	Remove() error
+
+	// Installed validates whether the tool has already been installed under the
+	// provided rootDir or not
+	Installed() (bool, error)
+
+	// Get the version installed in latest folder
+	InstalledVersion() (string, error)
+
+	// Get the latest version available on repo
+	LatestVersion() (string, error)
+}
+
+var toolMap map[string]Tool
 
 func initMap() {
-	toolMap = map[string]base.Tool{}
+	toolMap = map[string]Tool{}
 
 	// Self-management
 	self := self.New()
-	toolMap[self.GetName()] = self
+	toolMap[self.Name()] = self
 
 	// 3rd party tools
 	aws := awscli.New()
-	toolMap[aws.GetName()] = aws
+	toolMap[aws.Name()] = aws
 
 	oc := oc.New()
-	toolMap[oc.GetName()] = oc
+	toolMap[oc.Name()] = oc
 
 	ocm := ocm.New()
-	toolMap[ocm.GetName()] = ocm
+	toolMap[ocm.Name()] = ocm
 
 	osdctl := osdctl.New()
-	toolMap[osdctl.GetName()] = osdctl
+	toolMap[osdctl.Name()] = osdctl
 
 	backplanecli := backplanecli.New()
-	toolMap[backplanecli.GetName()] = backplanecli
+	toolMap[backplanecli.Name()] = backplanecli
 
 	rosa := rosa.New()
-	toolMap[rosa.GetName()] = rosa
+	toolMap[rosa.Name()] = rosa
 
 	yq := yq.New()
-	toolMap[yq.GetName()] = yq
+	toolMap[yq.Name()] = yq
 }
 
-func GetMap() map[string]base.Tool {
+func GetMap() map[string]Tool {
 	if toolMap == nil {
 		initMap()
 	}
@@ -61,23 +91,23 @@ func Names() []string {
 }
 
 // Remove removes the provided tools from the install directory
-func Remove(tools []base.Tool) error {
+func Remove(tools []Tool) error {
 	for _, tool := range tools {
 		fmt.Println()
-		fmt.Printf("Removing %s\n", tool.GetName())
+		fmt.Printf("Removing %s\n", tool.Name())
 		err := tool.Remove()
 		if err != nil {
-			fmt.Printf("Encountered error while removing %s: %v\n", tool.GetName(), err)
+			fmt.Printf("Encountered error while removing %s: %v\n", tool.Name(), err)
 			fmt.Println("Skipping...")
 		} else {
-			fmt.Printf("Successfully removed %s\n", tool.GetName())
+			fmt.Printf("Successfully removed %s\n", tool.Name())
 		}
 	}
 	return nil
 }
 
 // Install creates the directories necessary to install the provided tools and
-func Install(tools []base.Tool) error {
+func Install(tools []Tool) error {
 	// Create the root directory for all tools to install into
 	err := createInstallDir()
 	if err != nil {
@@ -92,13 +122,13 @@ func Install(tools []base.Tool) error {
 
 	for _, tool := range tools {
 		fmt.Println()
-		fmt.Printf("Installing %s\n", tool.GetName())
+		fmt.Printf("Installing %s\n", tool.Name())
 		err = tool.Install()
 		if err != nil {
-			fmt.Printf("Encountered error while installing %s: %v\n", tool.GetName(), err)
+			fmt.Printf("Encountered error while installing %s: %v\n", tool.Name(), err)
 			fmt.Println("Skipping...")
 		} else {
-			fmt.Printf("Successfully installed %s\n", tool.GetName())
+			fmt.Printf("Successfully installed %s\n", tool.Name())
 		}
 	}
 
@@ -130,9 +160,9 @@ func RemoveInstallDir() error {
 }
 
 // ListInstalled returns a slice containing all tools the current machine has installed
-func ListInstalled() ([]base.Tool, error) {
+func ListInstalled() ([]Tool, error) {
 	tools := GetMap()
-	installedTools := []base.Tool{}
+	installedTools := []Tool{}
 
 	for _, tool := range tools {
 		installed, err := tool.Installed()

@@ -22,7 +22,7 @@ type Tool struct {
 func New() *Tool {
 	t := &Tool{
 		Github: base.Github{
-			Default:            base.Default{Name: "aws"},
+			Default:            base.NewDefault("aws"),
 			Source:             github.NewSource("aws", "aws-cli"),
 			VersionInLatestTag: true,
 		},

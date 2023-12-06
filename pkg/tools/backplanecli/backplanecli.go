@@ -21,11 +21,10 @@ type Tool struct {
 func New() *Tool {
 	t := &Tool{
 		Github: base.Github{
-			Default: base.Default{Name: "backplane-cli"},
+			Default: base.NewDefaultWithExecutable("backplane-cli", "ocm-backplane"),
 			Source:  github.NewSource("openshift", "backplane-cli"),
 		},
 	}
-	t.SetExecutableName("ocm-backplane")
 	return t
 }
 

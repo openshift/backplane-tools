@@ -27,14 +27,14 @@ func List() error {
 	for _, t := range toolMap {
 		installed, err := t.Installed()
 		if err != nil {
-			return fmt.Errorf("failed to determine if '%s' has been installed: %w", t.GetName(), err)
+			return fmt.Errorf("failed to determine if '%s' has been installed: %w", t.Name(), err)
 		}
 		if installed {
 			installedVersion, err := t.InstalledVersion()
 			if err != nil {
-				return fmt.Errorf("failed to determine version for '%s': %w", t.GetName(), err)
+				return fmt.Errorf("failed to determine version for '%s': %w", t.Name(), err)
 			}
-			fmt.Printf("- %s %s\n", t.GetName(), installedVersion)
+			fmt.Printf("- %s %s\n", t.Name(), installedVersion)
 		}
 	}
 	return nil

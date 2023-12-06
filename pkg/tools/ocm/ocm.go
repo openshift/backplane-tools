@@ -22,7 +22,7 @@ type Tool struct {
 func New() *Tool {
 	t := &Tool{
 		Github: base.Github{
-			Default: base.Default{Name: "ocm"},
+			Default: base.NewDefault("ocm"),
 			Source:  github.NewSource("openshift-online", "ocm-cli"),
 		},
 	}

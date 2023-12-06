@@ -5,8 +5,11 @@ import (
 )
 
 type Github struct {
+	// Default defines the default tool implementation
 	Default
-	Source             *github.Source
+	// Source defines the source of the tool in GitHub
+	Source *github.Source
+	// VersionInLatestTag in
 	VersionInLatestTag bool
 }
 
