@@ -165,7 +165,7 @@ then
 else
   # Fail fast if not connected to the VPN instead of a very long timeout (exit code is curls proxy exit code)
   # This connect-timeout may need to be tuned depending on SRE geolocation and latency to the proxy
-  if ! curl --connect-timeout 1 squid.corp.redhat.com > /dev/null 2>&1
+  if ! curl --connect-timeout 1 "${HTTPS_PROXY}" > /dev/null 2>&1
   then
     echo "BPTools Error: Proxy Unavailable. Are you on the VPN?" 1>&2
     exit 5
