@@ -6,6 +6,7 @@ import (
 	"io"
 	"os"
 	"regexp"
+	"runtime"
 	"strings"
 )
 
@@ -148,4 +149,26 @@ func WriteFile(from io.Reader, to string, permissions os.FileMode) error {
 	}
 
 	return nil
+}
+
+// GetArchAliases returns all commonly used names for the system's architecture.
+// ie - An 'amd64' system is functionally equivalent to 'x86_64' for our purposes
+func GetArchAliases() []string {
+	switch runtime.GOARCH {
+	case "amd64":
+		return []string{"amd64", "x86_64"}
+	default:
+		return []string{runtime.GOARCH}
+	}
+}
+
+// GetOSAliases returns all commonly used names for the system's OS.
+// ie - A system running 'darwin' is functionally equivalent to 'mac' for our purposes
+func GetOSAliases() []string {
+	switch runtime.GOOS {
+	case "darwin":
+		return []string{"darwin", "mac"}
+	default:
+		return []string{runtime.GOOS}
+	}
 }

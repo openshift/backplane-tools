@@ -1,7 +1,7 @@
 /*
-mirror provides the capability for tools to retrieve files from mirror.openshift.com
+url provides the capability for tools to retrieve files from a specific URL
 */
-package mirror
+package url
 
 import (
 	"fmt"
@@ -14,20 +14,16 @@ import (
 	"github.com/openshift/backplane-tools/pkg/utils"
 )
 
-const (
-	defaultBaseURL string = "http://mirror.openshift.com"
-)
-
-// Source objects retrieve files from a mirror server
+// Source objects retrieve files from a remote server
 type Source struct {
 	// baseURL represents the url that the Source's requests should be built off of
 	BaseURL string
 }
 
 // NewSource creates a Source
-func NewSource() *Source {
+func NewSource(url string) *Source {
 	s := &Source{
-		BaseURL: defaultBaseURL,
+		BaseURL: url,
 	}
 	return s
 }

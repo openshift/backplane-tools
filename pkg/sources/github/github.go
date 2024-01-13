@@ -7,7 +7,6 @@ import (
 	"net/http"
 	"path/filepath"
 	"regexp"
-	"runtime"
 	"strings"
 
 	"github.com/cli/go-gh/v2/pkg/auth"
@@ -135,35 +134,25 @@ func (s Source) downloadReleaseAsset(asset *github.ReleaseAsset, dir string) err
 	return utils.WriteFile(reader, filePath, 0o755)
 }
 
-// FindOSAssets searches the provided list of assets and returns the subset, if any, matching
+// FindAssetsForOS searches the provided list of assets and returns the subset, if any, matching
 // the local OS as defined by runtime.GOOS, as well as any well-known alternative names for the OS
 func FindAssetsForOS(assets []*github.ReleaseAsset) []*github.ReleaseAsset {
-	searchPatterns := []string{runtime.GOOS}
-	if runtime.GOOS == "darwin" {
-		searchPatterns = append(searchPatterns, "mac")
-	}
-
 	matches := []*github.ReleaseAsset{}
 	for _, asset := range assets {
-		if utils.ContainsAny(strings.ToLower(asset.GetName()), searchPatterns) {
+		if utils.ContainsAny(strings.ToLower(asset.GetName()), utils.GetOSAliases()) {
 			matches = append(matches, asset)
 		}
 	}
 	return matches
 }
 
-// FindArchAssets searches the provided list of assets and returns the subset, if any, matching
+// FindAssetsForArch searches the provided list of assets and returns the subset, if any, matching
 // the local architecture as defined by runtime.GOARCH, as well as well-known alternative names for the
 // architecture
 func FindAssetsForArch(assets []*github.ReleaseAsset) []*github.ReleaseAsset {
-	searchPatterns := []string{runtime.GOARCH}
-	if runtime.GOARCH == "amd64" {
-		searchPatterns = append(searchPatterns, "x86_64")
-	}
-
 	matches := []*github.ReleaseAsset{}
 	for _, asset := range assets {
-		if utils.ContainsAny(strings.ToLower(asset.GetName()), searchPatterns) {
+		if utils.ContainsAny(strings.ToLower(asset.GetName()), utils.GetArchAliases()) {
 			matches = append(matches, asset)
 		}
 	}
