@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"runtime"
 	"strings"
 
 	gogithub "github.com/google/go-github/v51/github"
@@ -36,35 +35,18 @@ func (t *Tool) Install() error {
 		return err
 	}
 
-	// Determine which assets to download
-	var checksumAsset *gogithub.ReleaseAsset
-	var ocmBinaryAsset *gogithub.ReleaseAsset
-	for _, asset := range release.Assets {
-		// Exclude assets that do not match system OS
-		if !strings.Contains(asset.GetName(), runtime.GOOS) {
-			continue
-		}
-		// Exclude assets that do not match system architecture
-		if !strings.Contains(asset.GetName(), runtime.GOARCH) {
-			continue
-		}
+	matches := github.FindAssetsForArchAndOS(release.Assets)
+	binaryMatches := github.FindAssetsExcluding([]string{"sha256"}, matches)
+	if len(binaryMatches) != 1 {
+		return fmt.Errorf("unexpected number of assets found matching system spec: expected 1, got %d.\nMatching assets: %v", len(matches), matches)
+	}
+	ocmBinaryAsset := binaryMatches[0]
 
-		if strings.Contains(asset.GetName(), "sha256") {
-			if checksumAsset.GetName() != "" {
-				return fmt.Errorf("detected duplicate ocm-cli checksum assets")
-			}
-			checksumAsset = asset
-			continue
-		}
-		if ocmBinaryAsset.GetName() != "" {
-			return fmt.Errorf("detected duplicate ocm-cli binary assets")
-		}
-		ocmBinaryAsset = asset
+	checksumMatches := github.FindAssetsContaining([]string{"sha256"}, matches)
+	if len(checksumMatches) != 1 {
+		return fmt.Errorf("unexpected number of checksum assets found: expected 1, got %d.\nMatching assets: %v", len(matches), matches)
 	}
-	// Ensure both checksum and binary were retrieved
-	if checksumAsset.GetName() == "" || ocmBinaryAsset.GetName() == "" {
-		return fmt.Errorf("failed to find ocm-cli or it's checksum")
-	}
+	checksumAsset := checksumMatches[0]
 
 	// Download the arch- & os-specific assets
 	toolDir := t.ToolDir()

@@ -7,9 +7,13 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"regexp"
+	"runtime"
+	"strings"
 
 	"github.com/cli/go-gh/v2/pkg/auth"
 	"github.com/google/go-github/v51/github"
+	"github.com/openshift/backplane-tools/pkg/utils"
 	"golang.org/x/oauth2"
 )
 
@@ -141,4 +145,90 @@ func (s Source) downloadReleaseAsset(asset *github.ReleaseAsset, dir string) err
 		return err
 	}
 	return nil
+}
+
+// FindOSAssets searches the provided list of assets and returns the subset, if any, matching
+// the local OS as defined by runtime.GOOS, as well as any well-known alternative names for the OS
+func FindAssetsForOS(assets []*github.ReleaseAsset) []*github.ReleaseAsset {
+	searchPatterns := []string{runtime.GOOS}
+	if runtime.GOOS == "darwin" {
+		searchPatterns = append(searchPatterns, "mac")
+	}
+
+	matches := []*github.ReleaseAsset{}
+	for _, asset := range assets {
+		if utils.ContainsAny(strings.ToLower(asset.GetName()), searchPatterns) {
+			matches = append(matches, asset)
+		}
+	}
+	return matches
+}
+
+// FindArchAssets searches the provided list of assets and returns the subset, if any, matching
+// the local architecture as defined by runtime.GOARCH, as well as well-known alternative names for the
+// architecture
+func FindAssetsForArch(assets []*github.ReleaseAsset) []*github.ReleaseAsset {
+	searchPatterns := []string{runtime.GOARCH}
+	if runtime.GOARCH == "amd64" {
+		searchPatterns = append(searchPatterns, "x86_64")
+	}
+
+	matches := []*github.ReleaseAsset{}
+	for _, asset := range assets {
+		if utils.ContainsAny(strings.ToLower(asset.GetName()), searchPatterns) {
+			matches = append(matches, asset)
+		}
+	}
+	return matches
+}
+
+// FindAssetsForArchAndOS searches the provided list of assets and returns the subset, if any, matching
+// the local architecture and OS, as defined by runtime.GOARCH and runtime.GOOS, respectively.
+// In addition to these values, well-known alternatives are also used when searching.
+func FindAssetsForArchAndOS(assets []*github.ReleaseAsset) []*github.ReleaseAsset {
+	return FindAssetsForOS(FindAssetsForArch(assets))
+}
+
+// FindAssetMatching searches the provided slice of assets for entries whose Name matches the given pattern.
+// All matches are returned. If no matches are found, an error is returned.
+func FindAssetsMatching(pattern string, assets []*github.ReleaseAsset) ([]*github.ReleaseAsset, error) {
+	re, err := regexp.Compile(pattern)
+	if err != nil {
+		return []*github.ReleaseAsset{}, fmt.Errorf("provided pattern '%s' could not be compiled as regex: %w", pattern, err)
+	}
+
+	matches := []*github.ReleaseAsset{}
+	for _, asset := range assets {
+		if re.MatchString(asset.GetName()) {
+			matches = append(matches, asset)
+		}
+	}
+	if len(matches) == 0 {
+		return []*github.ReleaseAsset{}, fmt.Errorf("failed to find asset matching '%s'", pattern)
+	}
+	return matches, nil
+}
+
+// FindAssetContaining searches the provided slice of assets for entries whose Name contains all of the
+// given search terms.
+func FindAssetsContaining(terms []string, assets []*github.ReleaseAsset) []*github.ReleaseAsset {
+	matches := []*github.ReleaseAsset{}
+	for _, asset := range assets {
+		if utils.ContainsAll(asset.GetName(), terms) {
+			matches = append(matches, asset)
+		}
+	}
+	return matches
+}
+
+// FindAssetsExcluding searches the provided slice of assets for entries whose Name contains none of the
+// given search terms.
+func FindAssetsExcluding(terms []string, assets []*github.ReleaseAsset) []*github.ReleaseAsset {
+	matches := []*github.ReleaseAsset{}
+	for _, asset := range assets {
+		if !utils.ContainsAny(asset.GetName(), terms) {
+			matches = append(matches, asset)
+		}
+	}
+	return matches
 }

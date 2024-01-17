@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"runtime"
 	"strings"
 
 	gogithub "github.com/google/go-github/v51/github"
@@ -35,42 +34,17 @@ func (t *Tool) Install() error {
 		return err
 	}
 
-	// Determine which assets to download
-	var checksumAsset *gogithub.ReleaseAsset
-	var backplaneArchiveAsset *gogithub.ReleaseAsset
-	arch := runtime.GOARCH
-	if arch == "amd64" {
-		arch = "x86_64"
+	matches := github.FindAssetsForArchAndOS(release.Assets)
+	if len(matches) != 1 {
+		return fmt.Errorf("unexpected number of assets found matching system spec: expected 1, got %d.\nMatching assets: %v", len(matches), matches)
 	}
-	for _, asset := range release.Assets {
-		if asset.GetName() == "checksums.txt" {
-			if checksumAsset.GetName() != "" {
-				return fmt.Errorf("detected duplicate backplane-cli checksum assets")
-			}
-			checksumAsset = asset
-			continue
-		}
-		// Exclude assets that do not match system architecture
-		if !strings.Contains(asset.GetName(), arch) {
-			continue
-		}
-		// Exclude assets that do not match system OS
-		if !strings.Contains(strings.ToLower(asset.GetName()), strings.ToLower(runtime.GOOS)) {
-			continue
-		}
+	backplaneArchiveAsset := matches[0]
 
-		if backplaneArchiveAsset.GetName() != "" {
-			return fmt.Errorf("detected duplicate backplane-cli binary assets")
-		}
-		backplaneArchiveAsset = asset
+	matches = github.FindAssetsContaining([]string{"checksums.txt"}, release.Assets)
+	if len(matches) != 1 {
+		return fmt.Errorf("unexpected number of checksum assets found: expected 1, got %d.\nMatching assets: %v", len(matches), matches)
 	}
-	// Ensure both checksum and binary were retrieved
-	if backplaneArchiveAsset.GetName() == "" {
-		return fmt.Errorf("failed to find valid backplane-cli binary asset")
-	}
-	if checksumAsset.GetName() == "" {
-		return fmt.Errorf("failed to find valid backplane-cli checksum asset")
-	}
+	checksumAsset := matches[0]
 
 	// Download the arch- & os-specific assets
 	toolDir := t.ToolDir()

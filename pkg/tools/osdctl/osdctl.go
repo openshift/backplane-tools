@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"runtime"
 	"strings"
 
 	gogithub "github.com/google/go-github/v51/github"
@@ -36,37 +35,17 @@ func (t *Tool) Install() error {
 		return err
 	}
 
-	// Determine which assets to download
-	var checksumAsset *gogithub.ReleaseAsset
-	var osdctlBinaryAsset *gogithub.ReleaseAsset
-	arch := runtime.GOARCH
-	if arch == "amd64" {
-		arch = "x86_64"
+	matches := github.FindAssetsForArchAndOS(release.Assets)
+	if len(matches) != 1 {
+		return fmt.Errorf("unexpected number of assets found matching system spec: expected 1, got %d.\nMatching assets: %v", len(matches), matches)
 	}
-	for _, asset := range release.Assets {
-		if asset.GetName() == "sha256sum.txt" {
-			if checksumAsset.GetName() != "" {
-				return fmt.Errorf("detected duplicate osdctl checksum assets")
-			}
-			checksumAsset = asset
-			continue
-		}
-		if !strings.Contains(asset.GetName(), arch) {
-			continue
-		}
-		if !strings.Contains(strings.ToLower(asset.GetName()), strings.ToLower(runtime.GOOS)) {
-			continue
-		}
+	osdctlBinaryAsset := matches[0]
 
-		if osdctlBinaryAsset.GetName() != "" {
-			return fmt.Errorf("detected duplicate osdctl binary asset")
-		}
-		osdctlBinaryAsset = asset
+	matches = github.FindAssetsContaining([]string{"sha256sum.txt"}, release.Assets)
+	if len(matches) != 1 {
+		return fmt.Errorf("unexpected number of checksum assets found: expected 1, got %d.\nMatching assets: %v", len(matches), matches)
 	}
-	// Ensure both checksum and binary were retrieved
-	if checksumAsset.GetName() == "" || osdctlBinaryAsset.GetName() == "" {
-		return fmt.Errorf("failed to find osdctl or it's checksum")
-	}
+	checksumAsset := matches[0]
 
 	// Download the arch- & os-specific assets
 	toolDir := t.ToolDir()

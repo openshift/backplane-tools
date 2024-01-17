@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"runtime"
 	"strings"
 
 	gogithub "github.com/google/go-github/v51/github"
@@ -35,38 +34,18 @@ func (t *Tool) Install() error {
 		return err
 	}
 
-	// Determine which assets to download
-	var checksumAsset *gogithub.ReleaseAsset
-	var rosaBinaryAsset *gogithub.ReleaseAsset
-	for _, asset := range release.Assets {
-		// Exclude assets that do not match system architecture
-		if !strings.Contains(asset.GetName(), runtime.GOARCH) {
-			continue
-		}
-		// Exclude assets that do not match system OS
-		if !strings.Contains(strings.ToLower(asset.GetName()), strings.ToLower(runtime.GOOS)) {
-			continue
-		}
-		if strings.Contains(asset.GetName(), "sha256") {
-			if checksumAsset.GetName() != "" {
-				return fmt.Errorf("detected duplicate rosa checksum assets")
-			}
-			checksumAsset = asset
-			continue
-		}
+	matches := github.FindAssetsForArchAndOS(release.Assets)
+	binaryMatches := github.FindAssetsExcluding([]string{"sha256"}, matches)
+	if len(binaryMatches) != 1 {
+		return fmt.Errorf("unexpected number of assets found matching system spec: expected 1, got %d.\nMatching assets: %v", len(binaryMatches), binaryMatches)
+	}
+	rosaBinaryAsset := binaryMatches[0]
 
-		if rosaBinaryAsset.GetName() != "" {
-			return fmt.Errorf("detected duplicate rosa binary assets")
-		}
-		rosaBinaryAsset = asset
+	checksumMatches := github.FindAssetsContaining([]string{"sha256"}, matches)
+	if len(checksumMatches) != 1 {
+		return fmt.Errorf("unexpected number of checksum assets found: expected 1, got %d.\nMatching assets: %v", len(matches), matches)
 	}
-	// Ensure both checksum and binary were retrieved
-	if rosaBinaryAsset.GetName() == "" {
-		return fmt.Errorf("failed to find valid rosa binary asset")
-	}
-	if checksumAsset.GetName() == "" {
-		return fmt.Errorf("failed to find valid rosa checksum asset")
-	}
+	checksumAsset := checksumMatches[0]
 
 	// Download the arch- & os-specific assets
 	toolDir := t.ToolDir()
