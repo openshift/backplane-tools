@@ -118,3 +118,34 @@ func GetLineInReader(reader io.Reader, match string) (res string, err error) {
 	}
 	return "", fmt.Errorf("failed to find matching line for search pattern: '%s'", match)
 }
+
+// WriteFile creates a new file using the contents provided ('from') at the path provided ('to')
+func WriteFile(from io.Reader, to string, permissions os.FileMode) error {
+	file, err := os.Create(to)
+	if err != nil {
+		return fmt.Errorf("failed to create file '%s': %w", to, err)
+	}
+	defer func() {
+		closeErr := file.Close()
+		if closeErr != nil {
+			fmt.Fprintf(os.Stderr, "failed to close file '%s': %v", to, closeErr)
+		}
+	}()
+
+	err = file.Chmod(permissions)
+	if err != nil {
+		return fmt.Errorf("failed to set permissions on file '%s': %w", to, err)
+	}
+
+	_, err = file.ReadFrom(from)
+	if err != nil {
+		return fmt.Errorf("failed to write to file '%s': %w", to, err)
+	}
+
+	err = file.Sync()
+	if err != nil {
+		return fmt.Errorf("failed to sync file contents to disk: %w", err)
+	}
+
+	return nil
+}

@@ -10,6 +10,8 @@ import (
 	"net/url"
 	"os"
 	"path/filepath"
+
+	"github.com/openshift/backplane-tools/pkg/utils"
 )
 
 const (
@@ -53,27 +55,11 @@ func (s Source) DownloadFile(path, dir string) (string, error) {
 
 	_, fileName := filepath.Split(path)
 	filePath := filepath.Join(dir, fileName)
-	file, err := os.Create(filePath)
+	err = utils.WriteFile(resp.Body, filePath, os.FileMode(0o755))
 	if err != nil {
 		return "", fmt.Errorf("failed to create file '%s': %w", filePath, err)
 	}
-	defer func() {
-		closeErr := file.Close()
-		if closeErr != nil {
-			fmt.Printf("warning: failed to close %s\n", file.Name())
-		}
-	}()
-
-	_, err = file.ReadFrom(resp.Body)
-	if err != nil {
-		return "", fmt.Errorf("failed to download the contents of '%s' into '%s': %w", url, file.Name(), err)
-	}
-
-	err = file.Sync()
-	if err != nil {
-		return "", fmt.Errorf("failed to sync contents of '%s' to disk: %w", file.Name(), err)
-	}
-	return file.Name(), nil
+	return filePath, nil
 }
 
 // GetFileContents returns the contents of the specified file without storing it locally.
