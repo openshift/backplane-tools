@@ -116,24 +116,6 @@ func Unzip(source string, destination string) error {
 }
 
 func extractFile(destination string, f *tar.Header, arc io.Reader) error {
-	dst, err := os.Create(filepath.Join(destination, f.Name))
-	if err != nil {
-		return fmt.Errorf("failed to create file: %w", err)
-	}
-	defer func() {
-		err = dst.Close()
-		if err != nil {
-			fmt.Printf("warning: failed to close '%s': %s\n", dst.Name(), err.Error())
-		}
-	}()
-
-	err = dst.Chmod(os.FileMode(f.Mode))
-	if err != nil {
-		return fmt.Errorf("failed to set permission on '%s': %w", dst.Name(), err)
-	}
-	_, err = dst.ReadFrom(arc)
-	if err != nil {
-		return fmt.Errorf("failed to read from archive  %w", err)
-	}
-	return nil
+	path := filepath.Join(destination, f.Name)
+	return WriteFile(arc, path, os.FileMode(f.Mode))
 }

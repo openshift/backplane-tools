@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"os"
 	"path/filepath"
 	"regexp"
 	"runtime"
@@ -132,19 +131,8 @@ func (s Source) downloadReleaseAsset(asset *github.ReleaseAsset, dir string) err
 		}
 	}()
 	filePath := filepath.Join(dir, asset.GetName())
-	file, err := os.Create(filePath)
-	if err != nil {
-		return err
-	}
-	err = os.Chmod(file.Name(), os.FileMode(0o755))
-	if err != nil {
-		return err
-	}
-	_, err = file.ReadFrom(reader)
-	if err != nil {
-		return err
-	}
-	return nil
+
+	return utils.WriteFile(reader, filePath, 0o755)
 }
 
 // FindOSAssets searches the provided list of assets and returns the subset, if any, matching

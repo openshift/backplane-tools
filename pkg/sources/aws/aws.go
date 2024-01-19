@@ -1,20 +1,13 @@
 package aws
 
 import (
-	"io"
 	"net/http"
-	"os"
 	"path/filepath"
+
+	"github.com/openshift/backplane-tools/pkg/utils"
 )
 
 func DownloadAWSCLIRelease(url string, fileExtension string, dir string) error {
-	// Create the output file
-	filePath := filepath.Join(dir, "aws-cli"+fileExtension)
-	file, err := os.Create(filePath)
-	if err != nil {
-		return err
-	}
-
 	// Make the HTTP request to download the release
 	response, err := http.Get(url)
 	if err != nil {
@@ -22,11 +15,7 @@ func DownloadAWSCLIRelease(url string, fileExtension string, dir string) error {
 	}
 	defer response.Body.Close()
 
-	// Write the response body to the output file
-	_, err = io.Copy(file, response.Body)
-	if err != nil {
-		return err
-	}
-
-	return nil
+	// Create the output file
+	filePath := filepath.Join(dir, "aws-cli"+fileExtension)
+	return utils.WriteFile(response.Body, filePath, 0o755)
 }
