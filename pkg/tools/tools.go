@@ -8,6 +8,7 @@ import (
 	"github.com/openshift/backplane-tools/pkg/tools/awscli"
 	"github.com/openshift/backplane-tools/pkg/tools/backplanecli"
 	"github.com/openshift/backplane-tools/pkg/tools/base"
+	"github.com/openshift/backplane-tools/pkg/tools/butane"
 	"github.com/openshift/backplane-tools/pkg/tools/oc"
 	"github.com/openshift/backplane-tools/pkg/tools/ocm"
 	"github.com/openshift/backplane-tools/pkg/tools/osdctl"
@@ -77,6 +78,9 @@ func initMap() {
 
 	yq := yq.New()
 	toolMap[yq.Name()] = yq
+
+	butane := butane.New()
+	toolMap[butane.Name()] = butane
 }
 
 func GetMap() map[string]Tool {
