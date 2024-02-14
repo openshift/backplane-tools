@@ -9,6 +9,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"strings"
 )
 
 // Unarchive decompresses and extracts the contents of .tar.gz bundles to the specified destination
@@ -49,6 +50,16 @@ func Unarchive(source string, destination string) error {
 				return fmt.Errorf("failed to create a directory : %w", err)
 			}
 		} else {
+			// Sometimes tarballs don't include dir entries for their subdirectories
+			// (looking at you, gcloud).
+			// We need to make these manually, otherwise the extractFile function attempts to
+			// create a file with '/' in it's name, which causes an error
+			if strings.Contains(f.Name, "/") {
+				fileSubDir := filepath.Dir(f.Name)
+				fileSubDirPath := filepath.Join(destination, fileSubDir)
+				err = os.MkdirAll(fileSubDirPath, os.FileMode(0o755))
+			}
+
 			err = extractFile(destination, f, arc)
 			if err != nil {
 				return fmt.Errorf("failed to extract files: %w", err)

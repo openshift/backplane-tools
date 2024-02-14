@@ -9,6 +9,7 @@ import (
 	"github.com/openshift/backplane-tools/pkg/tools/backplanecli"
 	"github.com/openshift/backplane-tools/pkg/tools/base"
 	"github.com/openshift/backplane-tools/pkg/tools/butane"
+	"github.com/openshift/backplane-tools/pkg/tools/gcloud"
 	"github.com/openshift/backplane-tools/pkg/tools/oc"
 	"github.com/openshift/backplane-tools/pkg/tools/ocm"
 	"github.com/openshift/backplane-tools/pkg/tools/osdctl"
@@ -81,6 +82,14 @@ func initMap() {
 
 	butane := butane.New()
 	toolMap[butane.Name()] = butane
+
+	gcloud, err := gcloud.New()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Encountered error while initializing the 'gcloud' tool: %v\n", err)
+		fmt.Fprintln(os.Stderr, "Unable to install, upgrade, or remove 'gcloud' until the error is resolved")
+	} else {
+		toolMap[gcloud.Name()] = gcloud
+	}
 }
 
 func GetMap() map[string]Tool {

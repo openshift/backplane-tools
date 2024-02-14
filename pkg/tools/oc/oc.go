@@ -8,7 +8,7 @@ import (
 	"runtime"
 	"strings"
 
-	"github.com/openshift/backplane-tools/pkg/sources/openshift/mirror"
+	"github.com/openshift/backplane-tools/pkg/sources/openshift.com/mirror"
 	"github.com/openshift/backplane-tools/pkg/tools/base"
 	"github.com/openshift/backplane-tools/pkg/utils"
 )
