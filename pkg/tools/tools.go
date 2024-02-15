@@ -12,6 +12,7 @@ import (
 	"github.com/openshift/backplane-tools/pkg/tools/gcloud"
 	"github.com/openshift/backplane-tools/pkg/tools/oc"
 	"github.com/openshift/backplane-tools/pkg/tools/ocm"
+	"github.com/openshift/backplane-tools/pkg/tools/ocmaddons"
 	"github.com/openshift/backplane-tools/pkg/tools/osdctl"
 	"github.com/openshift/backplane-tools/pkg/tools/rosa"
 	"github.com/openshift/backplane-tools/pkg/tools/self"
@@ -67,6 +68,9 @@ func initMap() {
 
 	ocm := ocm.New()
 	toolMap[ocm.Name()] = ocm
+
+	ocmaddons := ocmaddons.New()
+	toolMap[ocmaddons.Name()] = ocmaddons
 
 	osdctl := osdctl.New()
 	toolMap[osdctl.Name()] = osdctl
