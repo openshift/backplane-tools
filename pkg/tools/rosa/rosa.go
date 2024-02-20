@@ -35,17 +35,16 @@ func (t *Tool) Install() error {
 	}
 
 	matches := github.FindAssetsForArchAndOS(release.Assets)
-	binaryMatches := github.FindAssetsExcluding([]string{"sha256"}, matches)
-	if len(binaryMatches) != 1 {
-		return fmt.Errorf("unexpected number of assets found matching system spec: expected 1, got %d.\nMatching assets: %v", len(binaryMatches), binaryMatches)
+	if len(matches) != 1 {
+		return fmt.Errorf("unexpected number of assets found matching system spec: expected 1, got %d.\nMatching assets: %v", len(matches), matches)
 	}
-	rosaBinaryAsset := binaryMatches[0]
+	toolArchiveAsset := matches[0]
 
-	checksumMatches := github.FindAssetsContaining([]string{"sha256"}, matches)
-	if len(checksumMatches) != 1 {
+	matches = github.FindAssetsContaining([]string{"checksums.txt"}, release.Assets)
+	if len(matches) != 1 {
 		return fmt.Errorf("unexpected number of checksum assets found: expected 1, got %d.\nMatching assets: %v", len(matches), matches)
 	}
-	checksumAsset := checksumMatches[0]
+	checksumAsset := matches[0]
 
 	// Download the arch- & os-specific assets
 	toolDir := t.ToolDir()
@@ -55,20 +54,20 @@ func (t *Tool) Install() error {
 		return fmt.Errorf("failed to create version-specific directory '%s': %w", versionedDir, err)
 	}
 
-	err = t.Source.DownloadReleaseAssets([]*gogithub.ReleaseAsset{checksumAsset, rosaBinaryAsset}, versionedDir)
+	err = t.Source.DownloadReleaseAssets([]*gogithub.ReleaseAsset{checksumAsset, toolArchiveAsset}, versionedDir)
 	if err != nil {
 		return fmt.Errorf("failed to download one or more assets: %w", err)
 	}
 
 	// Verify checksum of downloaded assets
-	rosaBinaryFilepath := filepath.Join(versionedDir, rosaBinaryAsset.GetName())
-	binarySum, err := utils.Sha256sum(rosaBinaryFilepath)
+	toolArchiveFilepath := filepath.Join(versionedDir, toolArchiveAsset.GetName())
+	binarySum, err := utils.Sha256sum(toolArchiveFilepath)
 	if err != nil {
-		return fmt.Errorf("failed to calculate checksum for '%s': %w", rosaBinaryFilepath, err)
+		return fmt.Errorf("failed to calculate checksum for '%s': %w", toolArchiveFilepath, err)
 	}
 
 	checksumFilePath := filepath.Join(versionedDir, checksumAsset.GetName())
-	checksumLine, err := utils.GetLineInFileMatchingKey(checksumFilePath, rosaBinaryAsset.GetName())
+	checksumLine, err := utils.GetLineInFileMatchingKey(checksumFilePath, toolArchiveAsset.GetName())
 	if err != nil {
 		return fmt.Errorf("failed to retrieve checksum from file '%s': %w", checksumFilePath, err)
 	}
@@ -78,20 +77,28 @@ func (t *Tool) Install() error {
 	}
 	actual := checksumTokens[0]
 
+	toolExecutable := t.ExecutableName()
 	if strings.TrimSpace(binarySum) != strings.TrimSpace(actual) {
-		return fmt.Errorf("warning: Checksum for rosa does not match the calculated value. Please retry installation. If issue persists, this tool can be downloaded manually at %s", rosaBinaryAsset.GetBrowserDownloadURL())
+		return fmt.Errorf("warning: Checksum for '%s' does not match the calculated value. Please retry installation. If issue persists, this tool can be downloaded manually at %s", toolExecutable, toolArchiveAsset.GetBrowserDownloadURL())
+	}
+
+	// Untar binary bundle
+	err = utils.Unarchive(toolArchiveFilepath, versionedDir)
+	if err != nil {
+		return fmt.Errorf("failed to unarchive the '%s' asset file '%s': %w", toolExecutable, toolArchiveFilepath, err)
 	}
 
 	// Link as latest
 	latestFilePath := t.SymlinkPath()
 	err = os.Remove(latestFilePath)
 	if err != nil && !os.IsNotExist(err) {
-		return fmt.Errorf("failed to remove existing 'rosa' binary at '%s': %w", base.LatestDir, err)
+		return fmt.Errorf("failed to remove existing '%s' binary at '%s': %w", toolExecutable, base.LatestDir, err)
 	}
 
-	err = os.Symlink(rosaBinaryFilepath, latestFilePath)
+	toolBinaryFilepath := filepath.Join(versionedDir, toolExecutable)
+	err = os.Symlink(toolBinaryFilepath, latestFilePath)
 	if err != nil {
-		return fmt.Errorf("failed to link new 'rosa' binary to '%s': %w", base.LatestDir, err)
+		return fmt.Errorf("failed to link new '%s' binary to '%s': %w", toolExecutable, base.LatestDir, err)
 	}
 	return nil
 }
