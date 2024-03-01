@@ -33,10 +33,10 @@ type Tool interface {
 	// it to provided the latestDir
 	Install() error
 
-	// Confiure is currently unused
+	// Configure currently unused
 	Configure() error
 
-	// Remove uninstalls the tool by deleting it's tool-unique directory under
+	// Remove uninstalls the tool by deleting its tool-unique directory under
 	// the provided rootDir and unlinking itself from the latestDir
 	Remove() error
 
@@ -44,10 +44,10 @@ type Tool interface {
 	// provided rootDir or not
 	Installed() (bool, error)
 
-	// Get the version installed in latest folder
+	// InstalledVersion gets the version installed in latest folder
 	InstalledVersion() (string, error)
 
-	// Get the latest version available on repo
+	// LatestVersion gets the latest version available on repo
 	LatestVersion() (string, error)
 }
 
@@ -57,47 +57,47 @@ func initMap() {
 	toolMap = map[string]Tool{}
 
 	// Self-management
-	self := self.New()
-	toolMap[self.Name()] = self
+	selfTool := self.New()
+	toolMap[selfTool.Name()] = selfTool
 
 	// 3rd party tools
-	aws := awscli.New()
-	toolMap[aws.Name()] = aws
+	awsTool := awscli.New()
+	toolMap[awsTool.Name()] = awsTool
 
-	oc := oc.New()
-	toolMap[oc.Name()] = oc
+	ocTool := oc.New()
+	toolMap[ocTool.Name()] = ocTool
 
-	ocm := ocm.New()
-	toolMap[ocm.Name()] = ocm
+	ocmTool := ocm.New()
+	toolMap[ocmTool.Name()] = ocmTool
 
-	ocmaddons := ocmaddons.New()
-	toolMap[ocmaddons.Name()] = ocmaddons
+	ocmaddonsTool := ocmaddons.New()
+	toolMap[ocmaddonsTool.Name()] = ocmaddonsTool
 
-	osdctl := osdctl.New()
-	toolMap[osdctl.Name()] = osdctl
+	osdctlTool := osdctl.New()
+	toolMap[osdctlTool.Name()] = osdctlTool
 
-	backplanecli := backplanecli.New()
-	toolMap[backplanecli.Name()] = backplanecli
+	backplanecliTool := backplanecli.New()
+	toolMap[backplanecliTool.Name()] = backplanecliTool
 
-	rosa := rosa.New()
-	toolMap[rosa.Name()] = rosa
+	rosaTool := rosa.New()
+	toolMap[rosaTool.Name()] = rosaTool
 
-	yq := yq.New()
-	toolMap[yq.Name()] = yq
+	yqTool := yq.New()
+	toolMap[yqTool.Name()] = yqTool
 
-	butane := butane.New()
-	toolMap[butane.Name()] = butane
+	butaneTool := butane.New()
+	toolMap[butaneTool.Name()] = butaneTool
 
-	gcloud, err := gcloud.New()
+	gcloudTool, err := gcloud.New()
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Encountered error while initializing the 'gcloud' tool: %v\n", err)
-		fmt.Fprintln(os.Stderr, "Unable to install, upgrade, or remove 'gcloud' until the error is resolved")
+		_, _ = fmt.Fprintf(os.Stderr, "Encountered error while initializing the 'gcloud' tool: %v\n", err)
+		_, _ = fmt.Fprintln(os.Stderr, "Unable to install, upgrade, or remove 'gcloud' until the error is resolved")
 	} else {
-		toolMap[gcloud.Name()] = gcloud
+		toolMap[gcloudTool.Name()] = gcloudTool
 	}
 
-	servicelogger := servicelogger.New()
-	toolMap[servicelogger.Name()] = servicelogger
+	serviceloggerTool := servicelogger.New()
+	toolMap[serviceloggerTool.Name()] = serviceloggerTool
 }
 
 func GetMap() map[string]Tool {
@@ -111,7 +111,7 @@ func Names() []string {
 	return utils.Keys(GetMap())
 }
 
-// Remove removes the provided tools from the install directory
+// Remove removes the provided tools from the installation directory
 func Remove(tools []Tool) error {
 	for _, tool := range tools {
 		fmt.Println()
@@ -183,7 +183,7 @@ func RemoveInstallDir() error {
 // ListInstalled returns a slice containing all tools the current machine has installed
 func ListInstalled() ([]Tool, error) {
 	tools := GetMap()
-	installedTools := []Tool{}
+	installedTools := make([]Tool, 0)
 
 	for _, tool := range tools {
 		installed, err := tool.Installed()
