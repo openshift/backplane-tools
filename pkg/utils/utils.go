@@ -2,6 +2,7 @@ package utils
 
 import (
 	"bufio"
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -99,7 +100,7 @@ func GetLineInFileMatchingKey(filepath string, key string) (res string, err erro
 		}
 	}
 
-	return "", fmt.Errorf("no match found")
+	return "", errors.New("no match found")
 }
 
 // GetLinInReader searches the provided reader for a line that contains the
