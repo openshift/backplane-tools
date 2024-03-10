@@ -51,8 +51,12 @@ mod:
 
 .PHONY: test
 test:
-	go test ${BUILDFLAGS} ./... -covermode=atomic -coverpkg=./...
+	go test ${BUILDFLAGS} ./...
 
 .PHONY: lint
 lint: download-golangci-lint
 	GOLANGCI_LINT_CACHE=$(shell mktemp -d) ${BIN_DIR}/golangci-lint run
+
+.PHONY: coverage
+coverage:
+	hack/codecov.sh
