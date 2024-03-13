@@ -1,5 +1,10 @@
 # backplane-tools
 
+[![Go Report Card](https://goreportcard.com/badge/github.com/openshift/backplane-tools)](https://goreportcard.com/report/github.com/openshift/backplane-tools)
+[![codecov](https://codecov.io/gh/openshift/backplane-tools/branch/main/graph/badge.svg)](https://codecov.io/gh/openshift/backplane-tools)
+[![GoDoc](https://godoc.org/github.com/openshift/backplane-tools?status.svg)](https://godoc.org/github.com/openshift/backplane-tools)
+[![License](https://img.shields.io/:license-apache-blue.svg)](http://www.apache.org/licenses/LICENSE-2.0.html)
+
 backplane-tools offers an easy solution to install, remove, and upgrade a useful set of tools for interacting with OpenShift clusters, managed or otherwise.
 
 ## Table of Contents
