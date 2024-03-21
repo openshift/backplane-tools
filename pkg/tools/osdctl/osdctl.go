@@ -13,6 +13,10 @@ import (
 	"github.com/openshift/backplane-tools/pkg/utils"
 )
 
+const (
+	toolChecksumAssetName = "sha256sum.txt"
+)
+
 // Tool implements the interface to manage the 'osdctl' binary
 type Tool struct {
 	base.Github
@@ -41,7 +45,7 @@ func (t *Tool) Install() error {
 	}
 	toolArchiveAsset := matches[0]
 
-	matches = github.FindAssetsContaining([]string{"checksums.txt"}, release.Assets)
+	matches = github.FindAssetsContaining([]string{toolChecksumAssetName}, release.Assets)
 	if len(matches) != 1 {
 		return fmt.Errorf("unexpected number of checksum assets found: expected 1, got %d.\nMatching assets: %v", len(matches), matches)
 	}
