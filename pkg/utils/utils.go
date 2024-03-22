@@ -144,11 +144,6 @@ func WriteFile(from io.Reader, to string, permissions os.FileMode) error {
 		return fmt.Errorf("failed to write to file '%s': %w", to, err)
 	}
 
-	err = file.Sync()
-	if err != nil {
-		return fmt.Errorf("failed to sync file contents to disk: %w", err)
-	}
-
 	return nil
 }
 
