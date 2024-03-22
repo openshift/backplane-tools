@@ -2,6 +2,7 @@ package upgrade
 
 import (
 	"fmt"
+	"os"
 	"strings"
 
 	"github.com/openshift/backplane-tools/pkg/tools"
@@ -55,12 +56,20 @@ func Upgrade(args []string) error {
 	for _, t := range listTools {
 		latestVersion, err := t.LatestVersion()
 		if err != nil {
-			return fmt.Errorf("failed to determine version for '%s': %w", t.Name(), err)
+			// If we cannot retrieve latest version info from tool's provider,
+			// skip (don't return) so that other tools can still be upgraded
+			fmt.Fprintf(os.Stderr, "failed to determine version for '%s': %v\n", t.Name(), err)
+			continue
 		}
+
 		installedVersion, err := t.InstalledVersion()
 		if err != nil {
-			return fmt.Errorf("failed to determine version for '%s': %w", t.Name(), err)
+			// If we cannot retrieve current version info from the local system,
+			// skip (don't return) so that other tools can still be upgraded
+			fmt.Fprintf(os.Stderr, "failed to determine version for '%s': %v\n", t.Name(), err)
+			continue
 		}
+
 		if installedVersion == latestVersion {
 			fmt.Printf("- %s is already installed with latest version %s and will not be upgraded\n", t.Name(), latestVersion)
 		} else {
