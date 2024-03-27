@@ -2,6 +2,7 @@ package upgrade
 
 import (
 	"fmt"
+	"os"
 	"strings"
 
 	"github.com/openshift/backplane-tools/pkg/tools"
@@ -52,21 +53,39 @@ func Upgrade(args []string) error {
 
 	fmt.Println("Upgrading the following tools: ")
 	upgradeList := []tools.Tool{}
+	// Filter the list of tools to determine which can be upgraded
 	for _, t := range listTools {
+		// Skip tools that are OneShot and have already been installed
+		installed, err := t.Installed()
+		if err != nil {
+			fmt.Fprintf(os.Stderr, "failed to determine if '%s' installed: %v", t.Name(), err)
+			continue
+		}
+		fmt.Printf("t.OneShot(): %v\n", t.OneShot())
+		if t.OneShot() && installed {
+			fmt.Printf("'%s' already installed. To upgrade this tool: %s", t.Name(), t.OneShotHelp())
+			continue
+		}
+
+		// Skip tools that are already at the current version
 		latestVersion, err := t.LatestVersion()
 		if err != nil {
-			return fmt.Errorf("failed to determine version for '%s': %w", t.Name(), err)
+			fmt.Fprintf(os.Stderr, "failed to determine version for '%s': %v", t.Name(), err)
+			continue
 		}
 		installedVersion, err := t.InstalledVersion()
 		if err != nil {
-			return fmt.Errorf("failed to determine version for '%s': %w", t.Name(), err)
+			fmt.Fprintf(os.Stderr, "failed to determine version for '%s': %v", t.Name(), err)
+			continue
 		}
 		if installedVersion == latestVersion {
 			fmt.Printf("- %s is already installed with latest version %s and will not be upgraded\n", t.Name(), latestVersion)
-		} else {
-			upgradeList = append(upgradeList, t)
-			fmt.Printf("- %s %s -> %s\n", t.Name(), installedVersion, latestVersion)
+			continue
 		}
+
+		// Upgrade tool
+		upgradeList = append(upgradeList, t)
+		fmt.Printf("- %s %s -> %s\n", t.Name(), installedVersion, latestVersion)
 	}
 
 	err := tools.Install(upgradeList)

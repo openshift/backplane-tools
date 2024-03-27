@@ -49,6 +49,14 @@ type Tool interface {
 
 	// LatestVersion gets the latest version available on repo
 	LatestVersion() (string, error)
+
+	// OneShot indicates whether the tool should only have it's install logic run once.
+	// This is useful for bootstrapping tools that are intended to be managed by another application going forward,
+	// ie- by adding a new repo and installing via dnf
+	OneShot() bool
+
+	// OneShotHelp indicates how the user should manage the tool once it has been bootstrapped by backplane-tools
+	OneShotHelp() string
 }
 
 var toolMap map[string]Tool

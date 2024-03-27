@@ -34,6 +34,12 @@ type Default struct {
 
 	// latestVersion is the latest version of the tool available for install
 	latestVersion string
+
+	// oneShot indicates whether the tool should only have it's install logic run once
+	oneShot bool
+
+	// oneShotHelp indicates how the user should manage the tool once it has been bootstrapped by backplane-tools
+	oneShotHelp string
 }
 
 // NewDefault creates a Default tool with the provided name
@@ -50,6 +56,15 @@ func NewDefaultWithExecutable(name, executable string) Default {
 	d := Default{
 		name:           name,
 		executableName: executable,
+	}
+	return d
+}
+
+func NewDefaultOneShot(name, help string) Default {
+	d := Default{
+		name: name,
+		oneShot: true,
+		oneShotHelp: help,
 	}
 	return d
 }
@@ -125,4 +140,14 @@ func (t *Default) InstalledVersion() (string, error) {
 		t.installedVersion = strings.SplitN(relLatestFileTarget, string(os.PathSeparator), 3)[1]
 	}
 	return t.installedVersion, nil
+}
+
+// OneShot indicates whether the tool should only be installed once
+func (t *Default) OneShot() bool {
+	return t.oneShot
+}
+
+// OneShotHelp indicates how the user should manage the tool once it has been bootstrapped by backplane-tools
+func (t *Default) OneShotHelp() string {
+	return t.oneShotHelp
 }
