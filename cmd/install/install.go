@@ -43,7 +43,7 @@ func Install(args []string) error {
 	for _, tool := range installList {
 		latestversion, err := tool.LatestVersion()
 		if err != nil {
-			return fmt.Errorf("Unable to get latest version of %s: %w", tool.Name(), err)
+			return fmt.Errorf("unable to get latest version of %s: %w", tool.Name(), err)
 		}
 		fmt.Printf("- %s %s\n", tool.Name(), latestversion)
 	}
