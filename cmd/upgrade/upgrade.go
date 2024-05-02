@@ -81,19 +81,12 @@ func upgradeTools(listTools []tools.Tool) error {
 	fmt.Println("Upgrading the following tools: ")
 	upgradeList := []tools.Tool{}
 	for _, t := range listTools {
-		latestVersion, err := t.LatestVersion()
+		isLatest, err := isLatestVersion(t)
 		if err != nil {
-			return fmt.Errorf("failed to determine version for '%s': %w", t.Name(), err)
+			return err
 		}
-		installedVersion, err := t.InstalledVersion()
-		if err != nil {
-			return fmt.Errorf("failed to determine version for '%s': %w", t.Name(), err)
-		}
-		if installedVersion == latestVersion {
-			fmt.Printf("- %s is already installed with latest version %s and will not be upgraded\n", t.Name(), latestVersion)
-		} else {
+		if !isLatest {
 			upgradeList = append(upgradeList, t)
-			fmt.Printf("- %s %s -> %s\n", t.Name(), installedVersion, latestVersion)
 		}
 	}
 
@@ -104,21 +97,30 @@ func upgradeTools(listTools []tools.Tool) error {
 	return nil
 }
 
-func upgradeSelfIfNecessary() (bool, error) {
-	selfTool := self.New()
-	latestVersion, err := selfTool.LatestVersion()
+func isLatestVersion(t tools.Tool) (bool, error) {
+	latestVersion, err := t.LatestVersion()
 	if err != nil {
-		return false, fmt.Errorf("failed to determine version for '%s': %w", selfTool.Name(), err)
+		return false, fmt.Errorf("failed to determine version for '%s': %w", t.Name(), err)
 	}
-	installedVersion, err := selfTool.InstalledVersion()
+	installedVersion, err := t.InstalledVersion()
 	if err != nil {
-		return false, fmt.Errorf("failed to determine version for '%s': %w", selfTool.Name(), err)
+		return false, fmt.Errorf("failed to determine version for '%s': %w", t.Name(), err)
 	}
 
 	if installedVersion == latestVersion {
-		return false, nil
+		fmt.Printf("- %s is already installed with latest version %s and will not be upgraded\n", t.Name(), latestVersion)
+		return true, nil
 	}
-	fmt.Printf("upgrading %s %s -> %s\n", selfTool.Name(), installedVersion, latestVersion)
+	fmt.Printf("- %s %s -> %s\n", t.Name(), installedVersion, latestVersion)
+	return false, nil
+}
+
+func upgradeSelfIfNecessary() (bool, error) {
+	selfTool := self.New()
+	isLatest, err := isLatestVersion(selfTool)
+	if err != nil || isLatest {
+		return false, err
+	}
 	err = tools.Install([]tools.Tool{selfTool})
 
 	if err != nil {
