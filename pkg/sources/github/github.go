@@ -27,7 +27,7 @@ type Source struct {
 }
 
 func NewSource(owner, repo string) *Source {
-	token, _ := auth.TokenForHost("")
+	token, _ := auth.TokenForHost("github.com")
 	var tc *http.Client
 	if token != "" {
 		ctx := context.Background()
