@@ -149,10 +149,13 @@ func WriteFile(from io.Reader, to string, permissions os.FileMode) error {
 
 // GetArchAliases returns all commonly used names for the system's architecture.
 // ie - An 'amd64' system is functionally equivalent to 'x86_64' for our purposes
+// An 'arm64' system is functionally equivalent to 'arm' for our purposes (mainly gcloud)
 func GetArchAliases() []string {
 	switch runtime.GOARCH {
 	case "amd64":
 		return []string{"amd64", "x86_64"}
+	case "arm64":
+		return []string{"arm64", "arm"}
 	default:
 		return []string{runtime.GOARCH}
 	}
