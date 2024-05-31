@@ -13,6 +13,7 @@ import (
 	"github.com/openshift/backplane-tools/pkg/tools/oc"
 	"github.com/openshift/backplane-tools/pkg/tools/ocm"
 	"github.com/openshift/backplane-tools/pkg/tools/ocmaddons"
+	"github.com/openshift/backplane-tools/pkg/tools/ocmcontainer"
 	"github.com/openshift/backplane-tools/pkg/tools/osdctl"
 	"github.com/openshift/backplane-tools/pkg/tools/rosa"
 	"github.com/openshift/backplane-tools/pkg/tools/self"
@@ -98,6 +99,9 @@ func initMap() {
 
 	serviceloggerTool := servicelogger.New()
 	toolMap[serviceloggerTool.Name()] = serviceloggerTool
+
+	ocmContainerTool := ocmcontainer.New()
+	toolMap[ocmContainerTool.Name()] = ocmContainerTool
 }
 
 func GetMap() map[string]Tool {
