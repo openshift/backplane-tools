@@ -34,15 +34,15 @@ func (t *Tool) Install() error {
 		return err
 	}
 
-	matches := github.FindAssetsExcluding([]string{".sha256"}, github.FindAssetsForArchAndOS(release.Assets))
+	matches := github.FindAssetsForArchAndOS(release.Assets)
 	if len(matches) != 1 {
-		return fmt.Errorf("unexpected number of assets found matching system spec: expected 1, got %d.\nMatching assets: %v", len(matches), matches)
+		return fmt.Errorf("unexpected number of executable assets found matching system spec: expected 1, got %d.\nMatching assets: %v", len(matches), matches)
 	}
 	toolAsset := matches[0]
 
-	matches = github.FindAssetsContaining([]string{".sha256"}, github.FindAssetsForArchAndOS(release.Assets))
+	matches = github.FindAssetsContaining([]string{"checksums.txt"}, release.Assets)
 	if len(matches) != 1 {
-		return fmt.Errorf("unexpected number of assets found matching system spec: expected 1, got %d.\nMatching assets: %v", len(matches), matches)
+		return fmt.Errorf("unexpected number of checksum assets found matching system spec: expected 1, got %d.\nMatching assets: %v", len(matches), matches)
 	}
 	checksumAsset := matches[0]
 
@@ -81,6 +81,11 @@ func (t *Tool) Install() error {
 		return fmt.Errorf("warning: Checksum for '%s' does not match the calculated value. Please retry installation. If issue persists, this tool can be downloaded manually at %s", *toolAsset.Name, toolAsset.GetBrowserDownloadURL())
 	}
 
+	err = utils.Unarchive(toolArchiveFilepath, versionedDir)
+	if err != nil {
+		return fmt.Errorf("failed to unarchive the '%s' asset file '%s': %w", t.Name(), toolArchiveFilepath, err)
+	}
+
 	// Link as latest
 	latestFilePath := t.SymlinkPath()
 	err = os.Remove(latestFilePath)
@@ -88,7 +93,7 @@ func (t *Tool) Install() error {
 		return fmt.Errorf("failed to remove existing '%s' binary at '%s': %w", *toolAsset.Name, base.LatestDir, err)
 	}
 
-	toolBinaryFilepath := filepath.Join(versionedDir, *toolAsset.Name)
+	toolBinaryFilepath := filepath.Join(versionedDir, t.ExecutableName())
 	err = os.Symlink(toolBinaryFilepath, latestFilePath)
 	if err != nil {
 		return fmt.Errorf("failed to link new '%s' binary to '%s': %w", *toolAsset.Name, base.LatestDir, err)
