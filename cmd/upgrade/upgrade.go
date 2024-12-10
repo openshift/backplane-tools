@@ -14,6 +14,7 @@ func Cmd() *cobra.Command {
 	toolNames := tools.Names()
 	upgradeCmd := &cobra.Command{
 		Use:       fmt.Sprintf("upgrade [all|%s]", strings.Join(toolNames, "|")),
+		Aliases:   []string{"update"},
 		Args:      cobra.OnlyValidArgs,
 		ValidArgs: append(toolNames, "all"),
 		Short:     "Upgrade an existing tool",
