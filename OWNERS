@@ -1,7 +1,6 @@
 reviewers:
   - boranx
   - robotmaxtron
-  - rendhalver
   - typeid
   - tnierman
   - clcollins
@@ -13,7 +12,6 @@ reviewers:
 approvers:
   - boranx
   - robotmaxtron
-  - rendhalver
   - typeid
   - tnierman
   - clcollins
@@ -25,7 +23,6 @@ approvers:
 maintainers:
   - boranx
   - robotmaxtron
-  - rendhalver
   - typeid
   - tnierman
   - clcollins
