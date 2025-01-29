@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"strings"
+	"sync"
 
 	"github.com/openshift/backplane-tools/pkg/tools/awscli"
 	"github.com/openshift/backplane-tools/pkg/tools/backplanecli"
@@ -145,17 +146,22 @@ func Install(tools []Tool) error {
 		return fmt.Errorf("failed to create latest directory: %w", err)
 	}
 
+	fmt.Println("\nPreparing to install...")
+	var wg sync.WaitGroup
+	wg.Add(len(tools))
 	for _, tool := range tools {
-		fmt.Println()
-		fmt.Printf("Installing %s\n", tool.Name())
-		err = tool.Install()
-		if err != nil {
-			fmt.Printf("Encountered error while installing %s: %v\n", tool.Name(), err)
-			fmt.Println("Skipping...")
-		} else {
-			fmt.Printf("Successfully installed %s\n", tool.Name())
-		}
+		go func(tool Tool) {
+			defer wg.Done()
+			err = tool.Install()
+			if err != nil {
+				fmt.Printf("Encountered error while installing %s: %v\n", tool.Name(), err)
+				fmt.Println("Skipping...")
+			} else {
+				fmt.Printf("Successfully installed %s\n", tool.Name())
+			}
+		}(tool)
 	}
+	wg.Wait()
 
 	// Check $PATH for the latest binaries
 	userPath, found := os.LookupEnv("PATH")
