@@ -2,6 +2,7 @@ package install
 
 import (
 	"fmt"
+	"sort"
 	"strings"
 
 	"github.com/openshift/backplane-tools/pkg/tools"
@@ -40,6 +41,11 @@ func Install(args []string) error {
 			installList = append(installList, toolMap[toolName])
 		}
 	}
+
+	sort.Slice(installList, func(i, j int) bool {
+		return installList[i].Name() < installList[j].Name()
+	})
+
 	for _, tool := range installList {
 		latestversion, err := tool.LatestVersion()
 		if err != nil {
