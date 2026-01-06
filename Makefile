@@ -17,7 +17,7 @@ OS := $(shell go env GOOS | sed 's/[a-z]/\U&/')
 ARCH := $(shell go env GOARCH)
 
 GORELEASER_VERSION="v1.15.0"
-GOLANGCI_LINT_VERSION="v1.55.0"
+GOLANGCI_LINT_VERSION="v1.62.2"
 
 .PHONY: download-goreleaser
 download-goreleaser:

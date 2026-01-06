@@ -53,8 +53,7 @@ linters:
   - errchkjson
   - errname
   - errorlint
-  - execinquery
-  - exportloopref
+  - copyloopvar
   - ginkgolinter
   - gocheckcompilerdirectives
   - gochecksumtype

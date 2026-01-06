@@ -20,7 +20,7 @@ type Mirror struct {
 // LatestVersion retrieves the version info contained within the provided release.txt file
 func (t *Mirror) _LatestVersion() (string, error) {
 	// Retrieve latest release info to determine which version we're operating on
-	releaseSlug := fmt.Sprintf("%s/release.txt", t.BaseSlug)
+	releaseSlug := t.BaseSlug + "/release.txt"
 	releaseData, err := t.Source.GetFileContents(releaseSlug)
 	if err != nil {
 		return "", fmt.Errorf("failed to retrieve release info from %s: %w", releaseSlug, err)
