@@ -1,3 +1,4 @@
+version: "2"
 linters:
   disable-all: true
   # One can't use disable and disable-all. disable-all is preferred to avoid lint failing when golangci gets updated and linters are added.
@@ -42,77 +43,79 @@ linters:
   #- godot            # Allow comments not ending with dot.
   #- goerr113         # We don't need stack traces in our errors.
   enable:
-  - asasalint
-  - asciicheck
-  - bidichk
-  - bodyclose
-  - decorder
-  - dupword
-  - durationcheck
-  - errcheck
-  - errchkjson
-  - errname
-  - errorlint
-  - execinquery
-  - exportloopref
-  - ginkgolinter
-  - gocheckcompilerdirectives
-  - gochecksumtype
-  - goconst
-  - gocritic
-  - gocyclo
-  - gofmt
-  - gofumpt
-  - goheader
-  - goimports
-  - gosmopolitan
-  - govet
-  - grouper
-  - importas
-  - ineffassign
-  - loggercheck
-  - maintidx
-  - makezero
-  - mirror
-  - misspell
-  - musttag
-  - nestif
-  - nilerr
-  - nilnil
-  - nolintlint
-  - nosprintfhostport
-  - paralleltest
-  - perfsprint
-  - prealloc
-  - predeclared
-  - promlinter
-  - protogetter
-  - reassign
-  - revive
-  - rowserrcheck
-  - sloglint
-  - staticcheck
-  - stylecheck
-  - tagalign
-  - tenv
-  - testableexamples
-  - testifylint
-  - thelper
-  - tparallel
-  - typecheck
-  - unconvert
-  - unused
-  - usestdlibvars
-  - wastedassign
-  - whitespace
-issues:
-  max-same-issues: 0
-  max-issues-per-linter: 0
-linters-settings:
-  gosec:
-    excludes:
-    - G301 # Poor file permissions used when creating a directory.
-    - G302 # Poor file permissions used with chmod.
-    - G306 # Poor file permissions used when writing to a new file.
-    - G601 # Taking address of loop variable - not relevant anymore.
-    - G602 # Should reports out of bound access but is broken.
+    - asasalint
+    - asciicheck
+    - bidichk
+    - bodyclose
+    - copyloopvar
+    - decorder
+    - dupword
+    - durationcheck
+    - errcheck
+    - errchkjson
+    - errname
+    - errorlint
+    - ginkgolinter
+    - gocheckcompilerdirectives
+    - gochecksumtype
+    - goconst
+    - gocritic
+    - gocyclo
+    - goheader
+    - gosmopolitan
+    - govet
+    - grouper
+    - importas
+    - ineffassign
+    - loggercheck
+    - maintidx
+    - makezero
+    - mirror
+    - misspell
+    - musttag
+    - nestif
+    - nilerr
+    - nilnil
+    - nolintlint
+    - nosprintfhostport
+    - paralleltest
+    - perfsprint
+    - prealloc
+    - predeclared
+    - promlinter
+    - protogetter
+    - reassign
+    - revive
+    - rowserrcheck
+    - sloglint
+    - staticcheck
+    - stylecheck
+    - tagalign
+    - tenv
+    - testableexamples
+    - testifylint
+    - thelper
+    - tparallel
+    - typecheck
+    - unconvert
+    - unused
+    - usestdlibvars
+    - wastedassign
+    - whitespace
+  exclusions:
+    generated: lax
+    max-same-issues: 0
+    max-issues-per-linter: 0
+  settings:
+    gosec:
+      excludes:
+        - G301 # Poor file permissions used when creating a directory.
+        - G302 # Poor file permissions used with chmod.
+        - G306 # Poor file permissions used when writing to a new file.
+        - G601 # Taking address of loop variable - not relevant anymore.
+        - G602 # Should reports out of bound access but is broken.
+formatters:
+  enable:
+    - gofmt
+    - gofumpt
+    - goimports
