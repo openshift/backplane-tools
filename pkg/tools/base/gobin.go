@@ -45,13 +45,13 @@ func (g *GoBin) Install() error {
 		return fmt.Errorf("expected binary at '%s' after 'go install', but it was not found: %w", builtBinary, err)
 	}
 
-	commitHash, err := extractVCSRevision(builtBinary)
+	version, err := extractModuleVersion(builtBinary, g.Module)
 	if err != nil {
 		return err
 	}
 
 	toolDir := g.ToolDir()
-	versionedDir := filepath.Join(toolDir, commitHash)
+	versionedDir := filepath.Join(toolDir, version)
 	if err := os.MkdirAll(versionedDir, os.FileMode(0o755)); err != nil {
 		return fmt.Errorf("failed to create version-specific directory '%s': %w", versionedDir, err)
 	}
@@ -100,15 +100,13 @@ func resolveGOBIN(goBin string) (string, error) {
 	return filepath.Join(gopath, "bin"), nil
 }
 
-func extractVCSRevision(binaryPath string) (string, error) {
+func extractModuleVersion(binaryPath, module string) (string, error) {
 	info, err := buildinfo.ReadFile(binaryPath)
 	if err != nil {
 		return "", fmt.Errorf("failed to read build info from '%s': %w", binaryPath, err)
 	}
-	for _, setting := range info.Settings {
-		if setting.Key == "vcs.revision" {
-			return setting.Value, nil
-		}
+	if info.Main.Path == module {
+		return info.Main.Version, nil
 	}
-	return "", fmt.Errorf("vcs.revision not found in build info of '%s'", binaryPath)
+	return "", fmt.Errorf("module '%s' not found in build info of '%s'", module, binaryPath)
 }
