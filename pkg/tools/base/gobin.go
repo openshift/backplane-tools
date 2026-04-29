@@ -2,6 +2,7 @@ package base
 
 import (
 	"debug/buildinfo"
+	"errors"
 	"fmt"
 	"os"
 	"os/exec"
@@ -95,7 +96,7 @@ func resolveGOBIN(goBin string) (string, error) {
 	}
 	gopath := strings.TrimSpace(string(out))
 	if gopath == "" {
-		return "", fmt.Errorf("both GOBIN and GOPATH are empty; cannot determine where 'go install' placed the binary")
+		return "", errors.New("both GOBIN and GOPATH are empty; cannot determine where 'go install' placed the binary")
 	}
 	return filepath.Join(gopath, "bin"), nil
 }
