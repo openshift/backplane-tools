@@ -95,10 +95,11 @@ func resolveGOBIN(goBin string) (string, error) {
 		return "", fmt.Errorf("failed to run 'go env GOPATH': %w", err)
 	}
 	gopath := strings.TrimSpace(string(out))
-	if gopath == "" {
+	entries := filepath.SplitList(gopath)
+	if len(entries) == 0 || entries[0] == "" {
 		return "", errors.New("both GOBIN and GOPATH are empty; cannot determine where 'go install' placed the binary")
 	}
-	return filepath.Join(gopath, "bin"), nil
+	return filepath.Join(entries[0], "bin"), nil
 }
 
 func extractModuleVersion(binaryPath, module string) (string, error) {
