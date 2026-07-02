@@ -5,7 +5,7 @@ go 1.25.8
 require (
 	cloud.google.com/go/storage v1.63.0
 	github.com/google/go-github/v51 v51.0.0
-	github.com/spf13/cobra v1.7.0
+	github.com/spf13/cobra v1.10.2
 	google.golang.org/api v0.287.0
 )
 
@@ -60,7 +60,7 @@ require (
 	github.com/cloudflare/circl v1.1.0 // indirect
 	github.com/google/go-querystring v1.1.0 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
-	github.com/spf13/pflag v1.0.5 // indirect
+	github.com/spf13/pflag v1.0.9 // indirect
 	golang.org/x/crypto v0.53.0 // indirect
 	golang.org/x/net v0.56.0 // indirect
 	golang.org/x/oauth2 v0.36.0
