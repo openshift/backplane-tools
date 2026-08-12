@@ -12,6 +12,26 @@ import (
 	"strings"
 )
 
+// safeJoinUnder resolves name relative to destination and rejects paths that escape
+// destination after cleaning (zip-slip / tar-slip mitigation).
+func safeJoinUnder(destination, name string) (string, error) {
+	if name == "" {
+		return "", errors.New("archive entry has empty name")
+	}
+	if filepath.IsAbs(name) {
+		return "", fmt.Errorf("archive entry has absolute path: %q", name)
+	}
+
+	dest := filepath.Clean(destination)
+	target := filepath.Clean(filepath.Join(dest, name))
+
+	if target != dest && !strings.HasPrefix(target, dest+string(os.PathSeparator)) {
+		return "", fmt.Errorf("archive entry escapes destination: %q", name)
+	}
+
+	return target, nil
+}
+
 // Unarchive decompresses and extracts the contents of .tar.gz bundles to the specified destination
 func Unarchive(source string, destination string) error {
 	src, err := os.Open(source)
@@ -44,26 +64,38 @@ func Unarchive(source string, destination string) error {
 		if err != nil {
 			return fmt.Errorf("failed to read from archive '%s': %w", source, err)
 		}
-		if f.FileInfo().IsDir() {
-			err = os.MkdirAll(filepath.Join(destination, f.Name), f.FileInfo().Mode())
+
+		switch f.Typeflag {
+		case tar.TypeDir:
+			dirPath, err := safeJoinUnder(destination, f.Name)
 			if err != nil {
-				return fmt.Errorf("failed to create a directory : %w", err)
+				return err
 			}
-		} else {
+			err = os.MkdirAll(dirPath, f.FileInfo().Mode())
+			if err != nil {
+				return fmt.Errorf("failed to create a directory: %w", err)
+			}
+		case tar.TypeReg:
 			// Sometimes tarballs don't include dir entries for their subdirectories
 			// (looking at you, gcloud).
-			// We need to make these manually, otherwise the extractFile function attempts to
-			// create a file with '/' in it's name, which causes an error
 			if strings.Contains(f.Name, "/") {
 				fileSubDir := filepath.Dir(f.Name)
-				fileSubDirPath := filepath.Join(destination, fileSubDir)
+				fileSubDirPath, err := safeJoinUnder(destination, fileSubDir)
+				if err != nil {
+					return err
+				}
 				err = os.MkdirAll(fileSubDirPath, os.FileMode(0o755))
+				if err != nil {
+					return fmt.Errorf("failed to create parent directory: %w", err)
+				}
 			}
 
 			err = extractFile(destination, f, arc)
 			if err != nil {
 				return fmt.Errorf("failed to extract files: %w", err)
 			}
+		default:
+			return fmt.Errorf("unsupported tar entry type %v for %q", f.Typeflag, f.Name)
 		}
 	}
 	return nil
@@ -71,7 +103,6 @@ func Unarchive(source string, destination string) error {
 
 // Unzip extracts files from a zip archive to the specified destination directory.
 func Unzip(source string, destination string) error {
-	// Open the zip archive for reading
 	reader, err := zip.OpenReader(source)
 	if err != nil {
 		return err
@@ -83,16 +114,17 @@ func Unzip(source string, destination string) error {
 		}
 	}(reader)
 
-	// Create the destination directory if it doesn't exist
 	if err := os.MkdirAll(destination, os.ModePerm); err != nil {
 		return err
 	}
 
-	// Extract each file from the zip archive
 	for _, file := range reader.File {
-		filePath := filepath.Join(destination, file.Name)
+		filePath, err := safeJoinUnder(destination, file.Name)
+		if err != nil {
+			return err
+		}
+
 		if file.FileInfo().IsDir() {
-			// Create the directory if it doesn't exist
 			err := os.MkdirAll(filePath, os.ModePerm)
 			if err != nil {
 				return err
@@ -100,33 +132,38 @@ func Unzip(source string, destination string) error {
 			continue
 		}
 
-		// Create the parent directory of the file if it doesn't exist
 		if err := os.MkdirAll(filepath.Dir(filePath), os.ModePerm); err != nil {
 			return err
 		}
 
-		// Open the file inside the zip archive
 		inputFile, err := file.Open()
 		if err != nil {
 			return err
 		}
 
-		// Create the output file
 		outputFile, err := os.OpenFile(filePath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, file.Mode())
 		if err != nil {
+			inputFile.Close()
 			return err
 		}
 
-		// Copy the contents from the input file to the output file
 		if _, err := io.Copy(outputFile, inputFile); err != nil {
+			inputFile.Close()
+			outputFile.Close()
 			return err
 		}
+
+		inputFile.Close()
+		outputFile.Close()
 	}
 
 	return nil
 }
 
 func extractFile(destination string, f *tar.Header, arc io.Reader) error {
-	path := filepath.Join(destination, f.Name)
+	path, err := safeJoinUnder(destination, f.Name)
+	if err != nil {
+		return err
+	}
 	return WriteFile(arc, path, os.FileMode(f.Mode))
 }
