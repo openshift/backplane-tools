@@ -198,6 +198,47 @@ func FindAssetsContaining(terms []string, assets []*github.ReleaseAsset) []*gith
 	return matches
 }
 
+// checksumAssetPatterns lists the (case-insensitive) substrings used by the various
+// release-tooling conventions to name a project's checksum manifest. goreleaser and
+// similar tools have shipped these under different names over time (e.g. rosa moved
+// from 'rosa_<ver>_checksums.txt' to 'rosa_<ver>_SHA256SUMS').
+var checksumAssetPatterns = []string{"checksums.txt", "sha256sums", "sha256sum.txt"}
+
+// checksumSignatureSuffixes lists suffixes of assets that accompany a checksum
+// manifest (e.g. a detached GPG signature 'SHA256SUMS.sig') but are not themselves
+// the manifest. These must be excluded so a checksum lookup resolves to a single file.
+var checksumSignatureSuffixes = []string{".sig", ".asc", ".pem", ".sha256"}
+
+// FindChecksumAsset searches the provided slice of assets for a checksum manifest,
+// tolerating the different naming conventions release tooling has used over time.
+// Detached signatures/certificates that sit alongside the manifest are excluded.
+// Matching is case-insensitive.
+func FindChecksumAsset(assets []*github.ReleaseAsset) []*github.ReleaseAsset {
+	matches := []*github.ReleaseAsset{}
+	for _, asset := range assets {
+		name := strings.ToLower(asset.GetName())
+		if hasAnySuffix(name, checksumSignatureSuffixes) {
+			continue
+		}
+		for _, pattern := range checksumAssetPatterns {
+			if strings.Contains(name, pattern) {
+				matches = append(matches, asset)
+				break
+			}
+		}
+	}
+	return matches
+}
+
+func hasAnySuffix(s string, suffixes []string) bool {
+	for _, suffix := range suffixes {
+		if strings.HasSuffix(s, suffix) {
+			return true
+		}
+	}
+	return false
+}
+
 // FindAssetsExcluding searches the provided slice of assets for entries whose Name contains none of the
 // given search terms.
 func FindAssetsExcluding(terms []string, assets []*github.ReleaseAsset) []*github.ReleaseAsset {
