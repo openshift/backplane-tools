@@ -94,6 +94,19 @@ func Unarchive(source string, destination string) error {
 			if err != nil {
 				return fmt.Errorf("failed to extract files: %w", err)
 			}
+		case tar.TypeLink:
+			// Hard link. f.Linkname is the path (relative to the archive root) of a
+			// previously-extracted entry. As of openshift-client 4.22.x, kubectl is
+			// shipped as a hard link to oc.
+			if err = extractHardLink(destination, f); err != nil {
+				return err
+			}
+		case tar.TypeSymlink:
+			// Symbolic link. f.Linkname is the (possibly relative) link target as it
+			// should appear on disk.
+			if err = extractSymlink(destination, f); err != nil {
+				return err
+			}
 		default:
 			return fmt.Errorf("unsupported tar entry type %v for %q", f.Typeflag, f.Name)
 		}
@@ -158,6 +171,68 @@ func Unzip(source string, destination string) error {
 	}
 
 	return nil
+}
+
+// extractHardLink creates a hard link on disk for a tar.TypeLink entry. Both the
+// link path (f.Name) and the target (f.Linkname) are resolved relative to the
+// archive root and validated to stay within destination (tar-slip mitigation).
+func extractHardLink(destination string, f *tar.Header) error {
+	linkPath, err := safeJoinUnder(destination, f.Name)
+	if err != nil {
+		return err
+	}
+	targetPath, err := safeJoinUnder(destination, f.Linkname)
+	if err != nil {
+		return err
+	}
+	if err := os.MkdirAll(filepath.Dir(linkPath), os.FileMode(0o755)); err != nil {
+		return fmt.Errorf("failed to create parent directory: %w", err)
+	}
+	// Remove any pre-existing file so re-installs don't fail with EEXIST.
+	if err := os.Remove(linkPath); err != nil && !os.IsNotExist(err) {
+		return fmt.Errorf("failed to remove existing file '%s': %w", linkPath, err)
+	}
+	if err := os.Link(targetPath, linkPath); err != nil {
+		return fmt.Errorf("failed to create hard link '%s' -> '%s': %w", linkPath, targetPath, err)
+	}
+	return nil
+}
+
+// extractSymlink creates a symbolic link on disk for a tar.TypeSymlink entry.
+// The symlink is only created if its target resolves within destination, to
+// prevent tar-slip through a link pointing outside the extraction directory.
+func extractSymlink(destination string, f *tar.Header) error {
+	linkPath, err := safeJoinUnder(destination, f.Name)
+	if err != nil {
+		return err
+	}
+	if !symlinkStaysUnder(destination, linkPath, f.Linkname) {
+		return fmt.Errorf("archive symlink %q -> %q escapes destination", f.Name, f.Linkname)
+	}
+	if err := os.MkdirAll(filepath.Dir(linkPath), os.FileMode(0o755)); err != nil {
+		return fmt.Errorf("failed to create parent directory: %w", err)
+	}
+	// Remove any pre-existing file so re-installs don't fail with EEXIST.
+	if err := os.Remove(linkPath); err != nil && !os.IsNotExist(err) {
+		return fmt.Errorf("failed to remove existing file '%s': %w", linkPath, err)
+	}
+	if err := os.Symlink(f.Linkname, linkPath); err != nil {
+		return fmt.Errorf("failed to create symlink '%s' -> '%s': %w", linkPath, f.Linkname, err)
+	}
+	return nil
+}
+
+// symlinkStaysUnder reports whether a symlink located at linkPath and pointing at
+// linkname resolves to a location within destination.
+func symlinkStaysUnder(destination, linkPath, linkname string) bool {
+	dest := filepath.Clean(destination)
+	var resolved string
+	if filepath.IsAbs(linkname) {
+		resolved = filepath.Clean(linkname)
+	} else {
+		resolved = filepath.Clean(filepath.Join(filepath.Dir(linkPath), linkname))
+	}
+	return resolved == dest || strings.HasPrefix(resolved, dest+string(os.PathSeparator))
 }
 
 func extractFile(destination string, f *tar.Header, arc io.Reader) error {
