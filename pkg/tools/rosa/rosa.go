@@ -40,7 +40,7 @@ func (t *Tool) Install() error {
 	}
 	toolAsset := matches[0]
 
-	matches = github.FindAssetsContaining([]string{"checksums.txt"}, release.Assets)
+	matches = github.FindChecksumAsset(release.Assets)
 	if len(matches) != 1 {
 		return fmt.Errorf("unexpected number of checksum assets found matching system spec: expected 1, got %d.\nMatching assets: %v", len(matches), matches)
 	}
@@ -81,7 +81,14 @@ func (t *Tool) Install() error {
 		return fmt.Errorf("warning: Checksum for '%s' does not match the calculated value. Please retry installation. If issue persists, this tool can be downloaded manually at %s", *toolAsset.Name, toolAsset.GetBrowserDownloadURL())
 	}
 
-	err = utils.Unarchive(toolArchiveFilepath, versionedDir)
+	// rosa's release tooling ships a .zip on some platforms and a .tar.gz on
+	// others (and the naming has changed across versions), so select the
+	// extractor based on the downloaded asset's extension.
+	if strings.HasSuffix(toolAsset.GetName(), ".zip") {
+		err = utils.Unzip(toolArchiveFilepath, versionedDir)
+	} else {
+		err = utils.Unarchive(toolArchiveFilepath, versionedDir)
+	}
 	if err != nil {
 		return fmt.Errorf("failed to unarchive the '%s' asset file '%s': %w", t.Name(), toolArchiveFilepath, err)
 	}
