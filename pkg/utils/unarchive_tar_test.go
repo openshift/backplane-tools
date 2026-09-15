@@ -3,6 +3,7 @@ package utils
 import (
 	"archive/tar"
 	"compress/gzip"
+	"errors"
 	"os"
 	"path/filepath"
 	"strings"
@@ -157,18 +158,24 @@ func writeTarGzWithSymlink(path, name, linkTarget string) error {
 	return tw.WriteHeader(hdr)
 }
 
-func writeTarGzWithHardLink(path, name, linkTarget string) error {
+func writeTarGzWithHardLink(path, name, linkTarget string) (err error) {
 	f, err := os.Create(path)
 	if err != nil {
 		return err
 	}
-	defer f.Close()
+	defer func() {
+		err = errors.Join(err, f.Close())
+	}()
 
 	gz := gzip.NewWriter(f)
-	defer gz.Close()
+	defer func() {
+		err = errors.Join(err, gz.Close())
+	}()
 
 	tw := tar.NewWriter(gz)
-	defer tw.Close()
+	defer func() {
+		err = errors.Join(err, tw.Close())
+	}()
 
 	content := []byte("binary contents")
 	if err := tw.WriteHeader(&tar.Header{
