@@ -75,7 +75,7 @@ func Unarchive(source string, destination string) error {
 			if err != nil {
 				return fmt.Errorf("failed to create a directory: %w", err)
 			}
-		case tar.TypeReg, tar.TypeRegA:
+		case tar.TypeReg:
 			// Sometimes tarballs don't include dir entries for their subdirectories
 			// (looking at you, gcloud).
 			if err := makeParentDir(destination, f.Name); err != nil {

@@ -10,6 +10,8 @@ import (
 )
 
 func TestFindChecksumAsset(t *testing.T) {
+	t.Parallel()
+
 	tests := []struct {
 		name       string
 		assetNames []string
@@ -40,6 +42,8 @@ func TestFindChecksumAsset(t *testing.T) {
 
 	for _, test := range tests {
 		t.Run(test.name, func(t *testing.T) {
+			t.Parallel()
+
 			assets := make([]*gogithub.ReleaseAsset, 0, len(test.assetNames))
 			for _, name := range test.assetNames {
 				assets = append(assets, &gogithub.ReleaseAsset{Name: gogithub.String(name)})
@@ -63,6 +67,8 @@ func TestFindChecksumAsset(t *testing.T) {
 }
 
 func TestExtractArchiveRejectsUnknownFormat(t *testing.T) {
+	t.Parallel()
+
 	err := extractArchive("rosa.exe", t.TempDir())
 	if err == nil {
 		t.Fatal("extractArchive succeeded for an unsupported format")
@@ -70,6 +76,8 @@ func TestExtractArchiveRejectsUnknownFormat(t *testing.T) {
 }
 
 func TestExtractArchiveZip(t *testing.T) {
+	t.Parallel()
+
 	source := filepath.Join(t.TempDir(), "rosa.zip")
 	file, err := os.Create(source)
 	if err != nil {

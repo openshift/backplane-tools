@@ -56,6 +56,8 @@ func (t installTestTool) Cleanup() (string, error) {
 }
 
 func TestInstallReturnsToolErrors(t *testing.T) {
+	t.Parallel()
+
 	originalInstallDir := base.InstallDir
 	originalLatestDir := base.LatestDir
 	base.InstallDir = t.TempDir()
