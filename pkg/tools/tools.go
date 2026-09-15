@@ -1,6 +1,7 @@
 package tools
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"strings"
@@ -151,20 +152,32 @@ func Install(tools []Tool) error {
 
 	fmt.Println("\nPreparing to install...")
 	var wg sync.WaitGroup
-	wg.Add(len(tools))
-	for _, tool := range tools {
-		go func(tool Tool) {
+	installErrors := make([]error, len(tools))
+	for i, tool := range tools {
+		wg.Add(1)
+		go func(i int, tool Tool) {
 			defer wg.Done()
-			err = tool.Install()
-			if err != nil {
-				fmt.Printf("Encountered error while installing %s: %v\n", tool.Name(), err)
+			installErr := tool.Install()
+			if installErr != nil {
+				installErrors[i] = fmt.Errorf("%s: %w", tool.Name(), installErr)
+				fmt.Printf("Encountered error while installing %s: %v\n", tool.Name(), installErr)
 				fmt.Println("Skipping...")
 			} else {
 				fmt.Printf("Successfully installed %s\n", tool.Name())
 			}
-		}(tool)
+		}(i, tool)
 	}
 	wg.Wait()
+
+	failedTools := make([]error, 0, len(installErrors))
+	for _, installErr := range installErrors {
+		if installErr != nil {
+			failedTools = append(failedTools, installErr)
+		}
+	}
+	if len(failedTools) > 0 {
+		return fmt.Errorf("one or more tools failed to install: %w", errors.Join(failedTools...))
+	}
 
 	// Check $PATH for the latest binaries
 	userPath, found := os.LookupEnv("PATH")

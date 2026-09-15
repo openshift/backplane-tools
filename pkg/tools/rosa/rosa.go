@@ -40,11 +40,10 @@ func (t *Tool) Install() error {
 	}
 	toolAsset := matches[0]
 
-	matches = github.FindAssetsContaining([]string{"checksums.txt"}, release.Assets)
-	if len(matches) != 1 {
-		return fmt.Errorf("unexpected number of checksum assets found matching system spec: expected 1, got %d.\nMatching assets: %v", len(matches), matches)
+	checksumAsset, err := findChecksumAsset(release.Assets)
+	if err != nil {
+		return err
 	}
-	checksumAsset := matches[0]
 
 	// Download the arch- & os-specific assets
 	toolDir := t.ToolDir()
@@ -81,7 +80,7 @@ func (t *Tool) Install() error {
 		return fmt.Errorf("warning: Checksum for '%s' does not match the calculated value. Please retry installation. If issue persists, this tool can be downloaded manually at %s", *toolAsset.Name, toolAsset.GetBrowserDownloadURL())
 	}
 
-	err = utils.Unarchive(toolArchiveFilepath, versionedDir)
+	err = extractArchive(toolArchiveFilepath, versionedDir)
 	if err != nil {
 		return fmt.Errorf("failed to unarchive the '%s' asset file '%s': %w", t.Name(), toolArchiveFilepath, err)
 	}
@@ -99,4 +98,32 @@ func (t *Tool) Install() error {
 		return fmt.Errorf("failed to link new '%s' binary to '%s': %w", *toolAsset.Name, base.LatestDir, err)
 	}
 	return nil
+}
+
+func findChecksumAsset(assets []*gogithub.ReleaseAsset) (*gogithub.ReleaseAsset, error) {
+	matches := make([]*gogithub.ReleaseAsset, 0)
+	for _, asset := range assets {
+		name := strings.ToLower(asset.GetName())
+		if strings.HasSuffix(name, "checksums.txt") ||
+			strings.HasSuffix(name, "sha256sums") ||
+			strings.HasSuffix(name, "sha256sums.txt") {
+			matches = append(matches, asset)
+		}
+	}
+
+	if len(matches) != 1 {
+		return nil, fmt.Errorf("unexpected number of checksum assets found matching system spec: expected 1, got %d.\nMatching assets: %v", len(matches), matches)
+	}
+
+	return matches[0], nil
+}
+
+func extractArchive(source, destination string) error {
+	if strings.HasSuffix(strings.ToLower(source), ".zip") {
+		return utils.Unzip(source, destination)
+	}
+	if strings.HasSuffix(strings.ToLower(source), ".tar.gz") {
+		return utils.Unarchive(source, destination)
+	}
+	return fmt.Errorf("unsupported archive format for %q", source)
 }

@@ -75,24 +75,20 @@ func Unarchive(source string, destination string) error {
 			if err != nil {
 				return fmt.Errorf("failed to create a directory: %w", err)
 			}
-		case tar.TypeReg:
+		case tar.TypeReg, tar.TypeRegA:
 			// Sometimes tarballs don't include dir entries for their subdirectories
 			// (looking at you, gcloud).
-			if strings.Contains(f.Name, "/") {
-				fileSubDir := filepath.Dir(f.Name)
-				fileSubDirPath, err := safeJoinUnder(destination, fileSubDir)
-				if err != nil {
-					return err
-				}
-				err = os.MkdirAll(fileSubDirPath, os.FileMode(0o755))
-				if err != nil {
-					return fmt.Errorf("failed to create parent directory: %w", err)
-				}
+			if err := makeParentDir(destination, f.Name); err != nil {
+				return err
 			}
 
 			err = extractFile(destination, f, arc)
 			if err != nil {
 				return fmt.Errorf("failed to extract files: %w", err)
+			}
+		case tar.TypeLink:
+			if err := extractHardLink(destination, f); err != nil {
+				return fmt.Errorf("failed to extract hard link %q: %w", f.Name, err)
 			}
 		default:
 			return fmt.Errorf("unsupported tar entry type %v for %q", f.Typeflag, f.Name)
@@ -166,4 +162,47 @@ func extractFile(destination string, f *tar.Header, arc io.Reader) error {
 		return err
 	}
 	return WriteFile(arc, path, os.FileMode(f.Mode))
+}
+
+func makeParentDir(destination, name string) error {
+	parent := filepath.Dir(name)
+	if parent == "." {
+		return nil
+	}
+
+	parentPath, err := safeJoinUnder(destination, parent)
+	if err != nil {
+		return err
+	}
+	if err := os.MkdirAll(parentPath, os.FileMode(0o755)); err != nil {
+		return fmt.Errorf("failed to create parent directory: %w", err)
+	}
+	return nil
+}
+
+func extractHardLink(destination string, f *tar.Header) error {
+	linkPath, err := safeJoinUnder(destination, f.Name)
+	if err != nil {
+		return err
+	}
+	if err := makeParentDir(destination, f.Name); err != nil {
+		return err
+	}
+
+	targetPath, err := safeJoinUnder(destination, f.Linkname)
+	if err != nil {
+		return fmt.Errorf("hard link target is invalid: %w", err)
+	}
+	targetInfo, err := os.Lstat(targetPath)
+	if err != nil {
+		return fmt.Errorf("failed to inspect hard link target %q: %w", f.Linkname, err)
+	}
+	if !targetInfo.Mode().IsRegular() {
+		return fmt.Errorf("hard link target %q is not a regular file", f.Linkname)
+	}
+
+	if err := os.Link(targetPath, linkPath); err != nil {
+		return fmt.Errorf("failed to create hard link to %q: %w", f.Linkname, err)
+	}
+	return nil
 }
