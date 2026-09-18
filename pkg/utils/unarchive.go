@@ -15,6 +15,12 @@ import (
 // safeJoinUnder resolves name relative to destination and rejects paths that escape
 // destination after cleaning (zip-slip / tar-slip mitigation).
 func safeJoinUnder(destination, name string) (string, error) {
+	return safeJoinFrom(destination, destination, name)
+}
+
+// safeJoinFrom resolves name relative to base and rejects paths that escape
+// destination after cleaning.
+func safeJoinFrom(destination, base, name string) (string, error) {
 	if name == "" {
 		return "", errors.New("archive entry has empty name")
 	}
@@ -23,7 +29,7 @@ func safeJoinUnder(destination, name string) (string, error) {
 	}
 
 	dest := filepath.Clean(destination)
-	target := filepath.Clean(filepath.Join(dest, name))
+	target := filepath.Clean(filepath.Join(base, name))
 
 	if target != dest && !strings.HasPrefix(target, dest+string(os.PathSeparator)) {
 		return "", fmt.Errorf("archive entry escapes destination: %q", name)
@@ -55,6 +61,7 @@ func Unarchive(source string, destination string) error {
 		}
 	}()
 	arc := tar.NewReader(uncompressed)
+	symlinks := make([]*tar.Header, 0)
 	var f *tar.Header
 	for {
 		f, err = arc.Next()
@@ -90,8 +97,21 @@ func Unarchive(source string, destination string) error {
 			if err := extractHardLink(destination, f); err != nil {
 				return fmt.Errorf("failed to extract hard link %q: %w", f.Name, err)
 			}
+		case tar.TypeSymlink:
+			if err := validateSymlink(destination, f); err != nil {
+				return fmt.Errorf("failed to validate symlink %q: %w", f.Name, err)
+			}
+			symlinks = append(symlinks, &tar.Header{Name: f.Name, Linkname: f.Linkname})
 		default:
 			return fmt.Errorf("unsupported tar entry type %v for %q", f.Typeflag, f.Name)
+		}
+	}
+
+	// Create symlinks only after every regular file and hard link has been
+	// extracted, so an archive cannot use a symlink to redirect a later write.
+	for _, link := range symlinks {
+		if err := extractSymlink(destination, link); err != nil {
+			return fmt.Errorf("failed to extract symlink %q: %w", link.Name, err)
 		}
 	}
 	return nil
@@ -203,6 +223,32 @@ func extractHardLink(destination string, f *tar.Header) error {
 
 	if err := os.Link(targetPath, linkPath); err != nil {
 		return fmt.Errorf("failed to create hard link to %q: %w", f.Linkname, err)
+	}
+	return nil
+}
+
+func validateSymlink(destination string, f *tar.Header) error {
+	linkPath, err := safeJoinUnder(destination, f.Name)
+	if err != nil {
+		return err
+	}
+	_, err = safeJoinFrom(destination, filepath.Dir(linkPath), f.Linkname)
+	return err
+}
+
+func extractSymlink(destination string, f *tar.Header) error {
+	linkPath, err := safeJoinUnder(destination, f.Name)
+	if err != nil {
+		return err
+	}
+	if err := makeParentDir(destination, f.Name); err != nil {
+		return err
+	}
+	if _, err := safeJoinFrom(destination, filepath.Dir(linkPath), f.Linkname); err != nil {
+		return err
+	}
+	if err := os.Symlink(f.Linkname, linkPath); err != nil {
+		return fmt.Errorf("failed to create symlink to %q: %w", f.Linkname, err)
 	}
 	return nil
 }
