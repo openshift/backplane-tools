@@ -15,6 +15,7 @@ reviewers:
   - petrkotas
   - zmird-r
   - gvnnn
+  - xiaoyu74
 approvers:
   - geowa4
   - boranx
@@ -32,6 +33,7 @@ approvers:
   - petrkotas
   - zmird-r
   - gvnnn
+  - xiaoyu74
 maintainers:
   - geowa4
   - boranx
