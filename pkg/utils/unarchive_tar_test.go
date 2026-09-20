@@ -86,21 +86,72 @@ func TestUnarchive_PathTraversalRejected(t *testing.T) {
 	}
 }
 
-func TestUnarchive_SymlinkRejected(t *testing.T) {
+func TestUnarchive_Symlink(t *testing.T) {
 	t.Parallel()
 
 	source := filepath.Join(t.TempDir(), "symlink.tar.gz")
 	dest := t.TempDir()
 
-	if err := writeTarGzWithSymlink(source, "link", "../outside"); err != nil {
+	if err := writeTarGzWithSymlinkAndTarget(
+		source,
+		"google-cloud-sdk/platform/bundledpythonunix/bin/idle3",
+		"idle3.13",
+		"google-cloud-sdk/platform/bundledpythonunix/bin/idle3.13",
+	); err != nil {
+		t.Fatalf("failed to create symlink archive: %v", err)
+	}
+
+	if err := Unarchive(source, dest); err != nil {
+		t.Fatalf("Unarchive failed: %v", err)
+	}
+
+	linkPath := filepath.Join(dest, "google-cloud-sdk/platform/bundledpythonunix/bin/idle3")
+	linkTarget, err := os.Readlink(linkPath)
+	if err != nil {
+		t.Fatalf("failed to read symlink: %v", err)
+	}
+	if linkTarget != "idle3.13" {
+		t.Fatalf("symlink target is %q, want %q", linkTarget, "idle3.13")
+	}
+	if data, err := os.ReadFile(linkPath); err != nil || string(data) != "binary contents" {
+		t.Fatalf("symlink does not resolve to its target: data=%q, err=%v", data, err)
+	}
+}
+
+func TestUnarchive_SymlinkTraversalRejected(t *testing.T) {
+	t.Parallel()
+
+	source := filepath.Join(t.TempDir(), "evil-symlink.tar.gz")
+	dest := t.TempDir()
+
+	if err := writeTarGzWithSymlink(source, "subdir/link", "../../outside"); err != nil {
 		t.Fatalf("failed to create symlink archive: %v", err)
 	}
 
 	err := Unarchive(source, dest)
 	if err == nil {
-		t.Fatal("expected Unarchive to reject symlink entries")
+		t.Fatal("expected Unarchive to reject an escaping symlink")
 	}
-	if !strings.Contains(err.Error(), "unsupported tar entry type") {
+	if !strings.Contains(err.Error(), "escapes destination") {
+		t.Fatalf("unexpected error: %v", err)
+	}
+}
+
+func TestUnarchive_AbsoluteSymlinkTargetRejected(t *testing.T) {
+	t.Parallel()
+
+	source := filepath.Join(t.TempDir(), "absolute-symlink.tar.gz")
+	dest := t.TempDir()
+
+	if err := writeTarGzWithSymlink(source, "link", "/etc/passwd"); err != nil {
+		t.Fatalf("failed to create symlink archive: %v", err)
+	}
+
+	err := Unarchive(source, dest)
+	if err == nil {
+		t.Fatal("expected Unarchive to reject an absolute symlink target")
+	}
+	if !strings.Contains(err.Error(), "absolute path") {
 		t.Fatalf("unexpected error: %v", err)
 	}
 }
@@ -156,6 +207,46 @@ func writeTarGzWithSymlink(path, name, linkTarget string) error {
 		Linkname: linkTarget,
 	}
 	return tw.WriteHeader(hdr)
+}
+
+func writeTarGzWithSymlinkAndTarget(path, name, linkTarget, target string) (err error) {
+	f, err := os.Create(path)
+	if err != nil {
+		return err
+	}
+	defer func() {
+		err = errors.Join(err, f.Close())
+	}()
+
+	gz := gzip.NewWriter(f)
+	defer func() {
+		err = errors.Join(err, gz.Close())
+	}()
+
+	tw := tar.NewWriter(gz)
+	defer func() {
+		err = errors.Join(err, tw.Close())
+	}()
+
+	if err := tw.WriteHeader(&tar.Header{
+		Name:     name,
+		Typeflag: tar.TypeSymlink,
+		Linkname: linkTarget,
+	}); err != nil {
+		return err
+	}
+
+	content := []byte("binary contents")
+	if err := tw.WriteHeader(&tar.Header{
+		Name:     target,
+		Mode:     0o755,
+		Size:     int64(len(content)),
+		Typeflag: tar.TypeReg,
+	}); err != nil {
+		return err
+	}
+	_, err = tw.Write(content)
+	return err
 }
 
 func writeTarGzWithHardLink(path, name, linkTarget string) (err error) {
