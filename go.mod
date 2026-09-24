@@ -6,7 +6,7 @@ require (
 	cloud.google.com/go/storage v1.66.0
 	github.com/google/go-github/v51 v51.0.0
 	github.com/spf13/cobra v1.10.2
-	google.golang.org/api v0.295.0
+	google.golang.org/api v0.298.0
 )
 
 require (
