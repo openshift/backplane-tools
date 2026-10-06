@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"runtime"
 	"strings"
 	"testing"
 )
@@ -51,6 +52,24 @@ func TestArchAliasesFor(t *testing.T) {
 			if got[i] != tt.want[i] {
 				t.Fatalf("archAliasesFor(%q) = %v, want %v", tt.arch, got, tt.want)
 			}
+		}
+	}
+}
+
+func TestGetArchAliases_MatchesCurrentRuntimeArch(t *testing.T) {
+	t.Parallel()
+
+	// GetArchAliases() is a thin wrapper around archAliasesFor(runtime.GOARCH);
+	// archAliasesFor itself is covered exhaustively above, so this just exercises
+	// the public entry point to confirm it delegates correctly.
+	got := GetArchAliases()
+	want := archAliasesFor(runtime.GOARCH)
+	if len(got) != len(want) {
+		t.Fatalf("GetArchAliases() = %v, want %v", got, want)
+	}
+	for i := range got {
+		if got[i] != want[i] {
+			t.Fatalf("GetArchAliases() = %v, want %v", got, want)
 		}
 	}
 }
