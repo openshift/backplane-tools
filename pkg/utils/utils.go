@@ -162,14 +162,22 @@ func WriteFile(from io.Reader, to string, permissions os.FileMode) error {
 // GetArchAliases returns all commonly used names for the system's architecture.
 // ie - An 'amd64' system is functionally equivalent to 'x86_64' for our purposes
 // An 'arm64' system is functionally equivalent to 'arm' for our purposes (mainly gcloud)
+// and to 'aarch64' for projects that publish assets using Rust-style target triples
+// (eg - coreos/butane)
 func GetArchAliases() []string {
-	switch runtime.GOARCH {
+	return archAliasesFor(runtime.GOARCH)
+}
+
+// archAliasesFor contains the actual alias lookup logic for GetArchAliases, parameterized
+// on the architecture so it can be unit tested independently of the host running the tests.
+func archAliasesFor(arch string) []string {
+	switch arch {
 	case "amd64":
 		return []string{"amd64", "x86_64"}
 	case "arm64":
-		return []string{"arm64", "arm"}
+		return []string{"arm64", "arm", "aarch64"}
 	default:
-		return []string{runtime.GOARCH}
+		return []string{arch}
 	}
 }
 
