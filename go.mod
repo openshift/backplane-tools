@@ -56,7 +56,7 @@ require (
 
 require (
 	github.com/ProtonMail/go-crypto v0.0.0-20230217124315-7d5c6f04bbb8
-	github.com/cli/go-gh/v2 v2.16.1
+	github.com/cli/go-gh/v2 v2.16.2
 	github.com/cloudflare/circl v1.1.0 // indirect
 	github.com/google/go-querystring v1.1.0 // indirect
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
