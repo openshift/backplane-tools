@@ -27,6 +27,7 @@ backplane-tools offers an easy solution to install, remove, and upgrade a useful
   - [Remove a specific thing](#remove-a-specific-thing)
   - [Cleanup everything](#cleanup-everything)
   - [Cleanup a specific thing](#cleanup-a-specific-thing)
+  - [Release backplane-tools](#release-backplane-tools)
 - [Design](#design)
   - [Directory Structure](#directory-structure)
   - [Installing](#installing)
@@ -169,6 +170,31 @@ backplane-tools cleanup all
 ```shell
 backplane-tools cleanup <tool name>
 ```
+
+### Release backplane-tools
+
+Releases are published manually; pushing a tag does not trigger a release workflow. The `make release` target runs GoReleaser, but it does not create or push a Git tag. Release from a clean checkout of the commit you intend to publish, after it has been merged into `upstream/main`.
+
+```shell
+git fetch upstream --tags
+git switch main
+git merge --ff-only upstream/main
+make test
+git tag -a vX.Y.Z -m "vX.Y.Z"
+git push upstream vX.Y.Z
+```
+
+Replace `vX.Y.Z` with the new version. In this repository, `upstream` is `github.com/openshift/backplane-tools`; do not push the release tag only to your fork. GoReleaser needs that tag to determine the release version.
+
+Authenticate with a GitHub token authorized to create releases in `openshift/backplane-tools`, then publish:
+
+```shell
+make download-goreleaser
+export GITHUB_TOKEN="$(gh auth token)"
+make release
+```
+
+`make release` uploads the release and assets to GitHub. Check the [releases page](https://github.com/openshift/backplane-tools/releases) for the new version and its archives and checksums. If publishing fails after the tag is pushed, fix the cause and retry the release; do not move or recreate the published tag.
 
 ## Design
 
