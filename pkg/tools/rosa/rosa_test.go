@@ -2,12 +2,71 @@ package rosa
 
 import (
 	"archive/zip"
+	"fmt"
 	"os"
 	"path/filepath"
+	"runtime"
 	"testing"
 
 	gogithub "github.com/google/go-github/v51/github"
 )
+
+func TestFindExecutableAsset(t *testing.T) {
+	t.Parallel()
+
+	zipName := fmt.Sprintf("rosa_%s_%s.zip", runtime.GOOS, runtime.GOARCH)
+	tarName := fmt.Sprintf("rosa_%s_%s.tar.gz", runtime.GOOS, runtime.GOARCH)
+	otherTarName := fmt.Sprintf("rosa-%s-%s.tar.gz", runtime.GOOS, runtime.GOARCH)
+	otherZipName := fmt.Sprintf("rosa-%s-%s.zip", runtime.GOOS, runtime.GOARCH)
+	tests := []struct {
+		name       string
+		assetNames []string
+		want       string
+		wantError  bool
+	}{
+		{name: "ZIP and tarball", assetNames: []string{tarName, zipName}, want: zipName},
+		{name: "single ZIP", assetNames: []string{zipName}, want: zipName},
+		{name: "single tarball", assetNames: []string{tarName}, want: tarName},
+		{name: "multiple ZIPs", assetNames: []string{zipName, otherZipName, tarName}, wantError: true},
+		{name: "multiple tarballs", assetNames: []string{tarName, otherTarName}, wantError: true},
+		{name: "unrelated matching asset", assetNames: []string{zipName, tarName, tarName + ".sig"}, wantError: true},
+	}
+	if runtime.GOOS == "darwin" && runtime.GOARCH == "arm64" {
+		tests = append(tests, struct {
+			name       string
+			assetNames []string
+			want       string
+			wantError  bool
+		}{
+			name:       "ROSA macOS arm64 release",
+			assetNames: []string{"rosa-macos-arm64.tar.gz", "rosa_darwin_arm64.zip", "rosa_1.2.68_SHA256SUMS"},
+			want:       "rosa_darwin_arm64.zip",
+		})
+	}
+
+	for _, test := range tests {
+		t.Run(test.name, func(t *testing.T) {
+			t.Parallel()
+			assets := make([]*gogithub.ReleaseAsset, 0, len(test.assetNames))
+			for _, name := range test.assetNames {
+				assets = append(assets, &gogithub.ReleaseAsset{Name: gogithub.String(name)})
+			}
+			got, err := findExecutableAsset(assets)
+			if test.wantError {
+				if err == nil {
+					t.Fatalf("findExecutableAsset(%v) succeeded, want error", test.assetNames)
+				}
+				return
+			}
+			if err != nil {
+				t.Fatalf("findExecutableAsset(%v): %v", test.assetNames, err)
+			}
+			if got.GetName() != test.want {
+				t.Fatalf("findExecutableAsset(%v) = %q, want %q", test.assetNames, got.GetName(), test.want)
+			}
+		})
+	}
+}
 
 func TestFindChecksumAsset(t *testing.T) {
 	t.Parallel()
