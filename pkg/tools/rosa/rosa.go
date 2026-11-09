@@ -34,11 +34,10 @@ func (t *Tool) Install() error {
 		return err
 	}
 
-	matches := github.FindAssetsForArchAndOS(release.Assets)
-	if len(matches) != 1 {
-		return fmt.Errorf("unexpected number of executable assets found matching system spec: expected 1, got %d.\nMatching assets: %v", len(matches), matches)
+	toolAsset, err := findExecutableAsset(release.Assets)
+	if err != nil {
+		return err
 	}
-	toolAsset := matches[0]
 
 	checksumAsset, err := findChecksumAsset(release.Assets)
 	if err != nil {
@@ -98,6 +97,34 @@ func (t *Tool) Install() error {
 		return fmt.Errorf("failed to link new '%s' binary to '%s': %w", *toolAsset.Name, base.LatestDir, err)
 	}
 	return nil
+}
+
+func findExecutableAsset(assets []*gogithub.ReleaseAsset) (*gogithub.ReleaseAsset, error) {
+	matches := github.FindAssetsForArchAndOS(assets)
+	if len(matches) == 1 {
+		return matches[0], nil
+	}
+
+	// ROSA releases may publish both ZIP and tar.gz archives for the same platform.
+	// Prefer ZIP, but only when every other matching asset is a tar.gz archive.
+	var zipAsset *gogithub.ReleaseAsset
+	zipCount := 0
+	archivesOnly := true
+	for _, asset := range matches {
+		name := strings.ToLower(asset.GetName())
+		switch {
+		case strings.HasSuffix(name, ".zip"):
+			zipAsset = asset
+			zipCount++
+		case strings.HasSuffix(name, ".tar.gz"):
+		default:
+			archivesOnly = false
+		}
+	}
+	if zipCount == 1 && archivesOnly {
+		return zipAsset, nil
+	}
+	return nil, fmt.Errorf("unexpected number of executable assets found matching system spec: expected 1, got %d.\nMatching assets: %v", len(matches), matches)
 }
 
 func findChecksumAsset(assets []*gogithub.ReleaseAsset) (*gogithub.ReleaseAsset, error) {

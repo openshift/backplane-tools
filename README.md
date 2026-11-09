@@ -44,6 +44,8 @@ The tools currently managed by this application include:
 * osdctl
 * rosa
 
+For ROSA releases that publish both ZIP and tar.gz archives for the same platform, backplane-tools installs the ZIP archive and verifies it against the release checksum file.
+
 ## FAQ - How do I...
 Quick reference guide
 
